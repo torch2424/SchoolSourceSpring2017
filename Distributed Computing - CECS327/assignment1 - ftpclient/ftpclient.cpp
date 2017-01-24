@@ -132,11 +132,14 @@ std::string passiveRequestReply(int socket, std::string message) {
         //Create our new connection
         printf("Connecting to %s:%d\n", connectionHost.c_str(), connectionPort);
         int newConnection = createConnection(connectionHost, connectionPort);
-        std::string newReply = reply(newConnection);
-        printf("TESTING3\n");
-        printf("%s\n", newReply.c_str());
         ftpSleep();
-        printf("TESTING4\n");
+        // TODO: Can't get connection reply working
+        // printf("%d\n", newConnection);
+        // printf("TESTING2\n");
+        // std::string newReply = reply(newConnection);
+        // printf("TESTING3\n");
+        // printf("%s\n", newReply.c_str());
+        // printf("TESTING4\n");
 
         //Pass to the request reply function with the message and new conneciton
         return requestReply(newConnection, message);
