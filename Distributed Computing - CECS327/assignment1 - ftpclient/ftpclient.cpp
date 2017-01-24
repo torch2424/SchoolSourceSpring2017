@@ -27,8 +27,16 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <vector>
 
 #define BUFFER_LENGTH 2048
+
+//Helper function for sleeping
+int ftpSleep() {
+        //Sleep for 500 milliseconds (500000 microseconds)
+        usleep(500000);
+        return 1;
+}
 
 int createConnection(std::string host, int port)
 {
@@ -72,12 +80,12 @@ std::string reply(int s)
         int count;
         char buffer[BUFFER_LENGTH+1];
 
-        usleep(1000);
+        ftpSleep();
         do {
                 count = recv(s, buffer, BUFFER_LENGTH, 0);
                 buffer[count] = '\0';
                 strReply += buffer;
-        } while (count ==  BUFFER_LENGTH);
+        } while (count == BUFFER_LENGTH);
         return strReply;
 }
 
@@ -90,13 +98,57 @@ std::string requestReply(int s, std::string message)
         return "";
 }
 
+std::string passiveRequestReply(int socket, std::string message) {
+
+        //First, set to passive mode
+        std::string passiveReply = requestReply(socket, "PASV\r\n");
+        ftpSleep();
+
+        //Parse our ip and port
+        //Grab the sub string of ip and port
+        std::string ipPort = passiveReply
+                             .substr(passiveReply.find("(") + 1,
+                                     passiveReply.find(")") - passiveReply.find("(") - 1);
+
+        //Build our connection string with our un-parse ip and port
+        std::vector<std::string> responseHost;
+        size_t index = 0;
+        std::string delimiter = ",";
+        //Parse by the , and create our array with each part of the host
+        while((index = ipPort.find(delimiter)) != std::string::npos) {
+                std::string foundItem = ipPort.substr(0, index);
+                responseHost.push_back(foundItem);
+                ipPort.erase(0, index + delimiter.length());
+        }
+        //Set the last item to the remainder of the ipPort
+        responseHost.push_back(ipPort);
+        //Bit shift to get the port
+        int connectionPort = (atoi(responseHost[4].c_str()) << 8 | atoi(responseHost[5].c_str()));
+        //Build the final connection host string
+        std::string connectionHost = responseHost[0] + "." + responseHost[1] +
+                                     "." + responseHost[2] + "." + responseHost[3];
+
+
+        //Create our new connection
+        printf("Connecting to %s:%d\n", connectionHost.c_str(), connectionPort);
+        int newConnection = createConnection(connectionHost, connectionPort);
+        std::string newReply = reply(newConnection);
+        printf("TESTING3\n");
+        printf("%s\n", newReply.c_str());
+        ftpSleep();
+        printf("TESTING4\n");
+
+        //Pass to the request reply function with the message and new conneciton
+        return requestReply(newConnection, message);
+}
+
 
 int main(int argc, char *argv[])
 {
         int sockpi;
         std::string strReply;
 
-        //TODO  arg[1] can be a dns or an IP address.
+        // TODO  arg[1] can be a dns or an IP address.
         if (argc > 2)
                 sockpi = createConnection(argv[1], atoi(argv[2]));
         if (argc == 2)
@@ -104,26 +156,27 @@ int main(int argc, char *argv[])
         else
                 sockpi = createConnection("130.179.16.134", 21);
         strReply = reply(sockpi);
-        std::cout << strReply  << std::endl;
+        printf("%s\n", strReply.c_str());
 
-
+        printf("***Logging into server***\n");
         strReply = requestReply(sockpi, "USER anonymous\r\n");
-        //TODO parse srtReply to obtain the status.
+        // TODO parse srtReply to obtain the status.
         // Let the system act according to the status and display
         // friendly message to the user
         // You can see the ouput using std::cout << strReply  << std::endl;
         printf("%s\n", strReply.c_str());
-
-
         strReply = requestReply(sockpi, "PASS asa@asas.com\r\n");
         printf("%s\n", strReply.c_str());
+        ftpSleep();
 
-        //TODO implement PASV, LIST, RETR.
-        strReply = requestReply(sockpi, "PASV\r\n");
-        printf("%s\n", strReply.c_str());
-
-        strReply = requestReply(sockpi, "LIST\r\n");
-        printf("%s\n", strReply.c_str());
+        // TODO implement PASV, LIST, RETR.
         // Hint: implement a function that set the SP in passive mode and accept commands.
+        printf("***Listing Files, this may take a while...***\n");
+        strReply = passiveRequestReply(sockpi, "LIST\r\n");
+        printf("%s\n", strReply.c_str());
+        ftpSleep();
+
+        printf("***Goodbye! Have a nice day!***\n");
         return 0;
+        exit(0);
 }
