@@ -1,6 +1,6 @@
 /**
     C++ client example using sockets.
-    This programs can be compiled in linux and with minor modification in 
+    This programs can be compiled in linux and with minor modification in
 	   mac (mainly on the name of the headers)
     Windows requires extra lines of code and different headers
 #define WIN32_LEAN_AND_MEAN
@@ -34,12 +34,12 @@ int createConnection(std::string host, int port)
 {
     int s;
     struct sockaddr_in sockaddr;
-    
+
     memset(&sockaddr,0, sizeof(sockaddr));
     s = socket(AF_INET,SOCK_STREAM,0);
     sockaddr.sin_family=AF_INET;
     sockaddr.sin_port= htons(port);
-    
+
     int a1,a2,a3,a4;
     if (sscanf(host.c_str(), "%d.%d.%d.%d", &a1, &a2, &a3, &a4 ) == 4)
     {
@@ -71,7 +71,7 @@ std::string reply(int s)
     std::string strReply;
     int count;
     char buffer[BUFFER_LENGTH+1];
-    
+
     usleep(1000);
     do {
         count = recv(s, buffer, BUFFER_LENGTH, 0);
@@ -95,7 +95,7 @@ int main(int argc , char *argv[])
 {
     int sockpi;
     std::string strReply;
-    
+
     //TODO  arg[1] can be a dns or an IP address.
     if (argc > 2)
         sockpi = createConnection(argv[1], atoi(argv[2]));
@@ -105,18 +105,22 @@ int main(int argc , char *argv[])
         sockpi = createConnection("130.179.16.134", 21);
     strReply = reply(sockpi);
     std::cout << strReply  << std::endl;
-    
-    
+
+
     strReply = requestReply(sockpi, "USER anonymous\r\n");
-    //TODO parse srtReply to obtain the status. 
+    //TODO parse srtReply to obtain the status.
 	// Let the system act according to the status and display
-    // friendly message to the user 
+    // friendly message to the user
 	// You can see the ouput using std::cout << strReply  << std::endl;
-    
-    
+  printf("%s\n", strReply.c_str());
+
+
     strReply = requestReply(sockpi, "PASS asa@asas.com\r\n");
-        
-    //TODO implement PASV, LIST, RETR. 
+    printf("%s\n", strReply.c_str());
+
+    //TODO implement PASV, LIST, RETR.
+    strReply = requestReply(sockpi, "PASV\r\n");
+    printf("%s\n", strReply.c_str());
     // Hint: implement a function that set the SP in passive mode and accept commands.
     return 0;
 }
