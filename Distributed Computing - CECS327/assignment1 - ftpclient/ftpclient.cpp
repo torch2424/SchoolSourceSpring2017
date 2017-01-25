@@ -133,16 +133,19 @@ std::string passiveRequestReply(int socket, std::string message) {
         printf("Connecting to %s:%d\n", connectionHost.c_str(), connectionPort);
         int newConnection = createConnection(connectionHost, connectionPort);
         ftpSleep();
-        // TODO: Can't get connection reply working
-        // printf("%d\n", newConnection);
-        // printf("TESTING2\n");
-        // std::string newReply = reply(newConnection);
-        // printf("TESTING3\n");
-        // printf("%s\n", newReply.c_str());
-        // printf("TESTING4\n");
 
-        //Pass to the request reply function with the message and new conneciton
-        return requestReply(newConnection, message);
+        //Ask the pi socket for a response
+        requestReply(socket, message);
+        ftpSleep();
+
+        //Pass to the request reply function with the message and new connection
+        std::string fileList = reply(newConnection);
+        ftpSleep();
+
+        //Close the Connection to the new conneciton
+        close(newConnection);
+
+        return fileList;
 }
 
 
@@ -176,6 +179,11 @@ int main(int argc, char *argv[])
         // Hint: implement a function that set the SP in passive mode and accept commands.
         printf("***Listing Files, this may take a while...***\n");
         strReply = passiveRequestReply(sockpi, "LIST\r\n");
+        printf("%s\n", strReply.c_str());
+        ftpSleep();
+
+        printf("***Retrieving welcome.msg, this may take a while...***\n");
+        strReply = passiveRequestReply(sockpi, "RETR welcome.msg\r\n");
         printf("%s\n", strReply.c_str());
         ftpSleep();
 
