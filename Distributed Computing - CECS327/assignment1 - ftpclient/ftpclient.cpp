@@ -139,13 +139,13 @@ std::string passiveRequestReply(int socket, std::string message) {
         ftpSleep();
 
         //Pass to the request reply function with the message and new connection
-        std::string fileList = reply(newConnection);
+        std::string dtpResponse = reply(newConnection);
         ftpSleep();
 
         //Close the Connection to the new conneciton
         close(newConnection);
 
-        return fileList;
+        return dtpResponse;
 }
 
 
@@ -153,8 +153,9 @@ int main(int argc, char *argv[])
 {
         int sockpi;
         std::string strReply;
+        std::string piReply;
 
-        // TODO  arg[1] can be a dns or an IP address.
+        // Create a connection to the passed host and port, or the default server
         if (argc > 2)
                 sockpi = createConnection(argv[1], atoi(argv[2]));
         if (argc == 2)
@@ -180,11 +181,15 @@ int main(int argc, char *argv[])
         printf("***Listing Files, this may take a while...***\n");
         strReply = passiveRequestReply(sockpi, "LIST\r\n");
         printf("%s\n", strReply.c_str());
+        piReply = reply(sockpi);
+        printf("%s\n", piReply.c_str());
         ftpSleep();
 
-        printf("***Retrieving welcome.msg, this may take a while...***\n");
-        strReply = passiveRequestReply(sockpi, "RETR welcome.msg\r\n");
+        printf("***Retrieving a file, this may take a while...***\n");
+        strReply = passiveRequestReply(sockpi, "RETR NOTICE\r\n");
         printf("%s\n", strReply.c_str());
+        piReply = reply(sockpi);
+        printf("%s\n", piReply.c_str());
         ftpSleep();
 
         printf("***Goodbye! Have a nice day!***\n");
