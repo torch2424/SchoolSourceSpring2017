@@ -21,6 +21,7 @@
 #include <stdio.h> //printf
 #include <stdlib.h>
 #include <string.h>    //strlen
+#include <sstream>
 #include <sys/socket.h>    //socket
 #include <arpa/inet.h> //inet_addr
 #include <netinet/in.h>
@@ -31,11 +32,32 @@
 
 #define BUFFER_LENGTH 2048
 
+//Define some nice colors for our UI
+#define NORMAL  "\x1B[0m"
+#define RED  "\x1B[31m"
+#define GREEN  "\x1B[32m"
+
 //Helper function for sleeping
-int ftpSleep() {
+void ftpSleep() {
         //Sleep for 500 milliseconds (500000 microseconds)
         usleep(500000);
-        return 1;
+}
+
+//Helper functions for displaying messages
+void displayMessage(std::string message) {
+        printf("%s%s%s\n", NORMAL, message.c_str(), NORMAL);
+}
+
+void displayUserMessage(std::string message) {
+        printf("%s*********************************\n", GREEN);
+        printf("%s\n", message.c_str());
+        printf("*********************************%s\n", NORMAL);
+}
+
+void displayUserError(std::string message) {
+        printf("%s*********************************\n", RED);
+        printf("%s\n", message.c_str());
+        printf("*********************************%s\n", NORMAL);
 }
 
 int createConnection(std::string host, int port)
@@ -130,7 +152,9 @@ std::string passiveRequestReply(int socket, std::string message) {
 
 
         //Create our new connection
-        printf("Connecting to %s:%d\n", connectionHost.c_str(), connectionPort);
+        std::stringstream connectionMessage;
+        connectionMessage << "Connecting to " << connectionHost << ":" << connectionPort;
+        displayMessage(connectionMessage.str());
         int newConnection = createConnection(connectionHost, connectionPort);
         ftpSleep();
 
@@ -148,12 +172,52 @@ std::string passiveRequestReply(int socket, std::string message) {
         return dtpResponse;
 }
 
+//List Files From the Server
+void listFiles(int socket) {
+        displayUserMessage("Listing Files from the server root directory");
+        std::string fileListing = passiveRequestReply(socket, "LIST\r\n");
+        displayMessage(fileListing);
+        std::string serverReply = reply(socket);
+        displayMessage(serverReply);
+        ftpSleep();
+}
+
+//Get a file from the server
+void getFile(int socket, std::string fileName) {
+        //Format/Display the user message
+        std::stringstream formattedMessage;
+        formattedMessage << "Retrieving the file, " << fileName.c_str();
+        displayUserMessage(formattedMessage.str());
+
+        //Format the filename with the return and newline
+        std::stringstream formattedFileName;
+        formattedFileName << "RETR " << fileName.c_str() << "\r\n";
+        std::string fileReply = passiveRequestReply(socket, formattedFileName.str());
+
+        //Print the responses
+        displayMessage(fileReply);
+        std::string socketReply = reply(socket);
+        displayMessage(socketReply);
+        ftpSleep();
+}
+
+//Send QUIT to the server
+void quitConnection(int socket) {
+        displayUserMessage("Sending QUIT to the server, and closing the connection...");
+        std::string strReply = requestReply(socket, "QUIT\r\n");
+        displayMessage(strReply);
+        close(socket);
+        ftpSleep();
+}
+
 
 int main(int argc, char *argv[])
 {
         int sockpi;
         std::string strReply;
         std::string piReply;
+
+        displayUserMessage("Welcome to the CECS478 FTP Client");
 
         // Create a connection to the passed host and port, or the default server
         if (argc > 2)
@@ -177,27 +241,25 @@ int main(int argc, char *argv[])
         ftpSleep();
 
         // LIST files in the server
-        printf("***Listing Files, this may take a while...***\n");
-        strReply = passiveRequestReply(sockpi, "LIST\r\n");
-        printf("%s\n", strReply.c_str());
-        piReply = reply(sockpi);
-        printf("%s\n", piReply.c_str());
-        ftpSleep();
+        listFiles(sockpi);
 
         // RETR a file from a server
-        printf("***Retrieving a file, this may take a while...***\n");
-        strReply = passiveRequestReply(sockpi, "RETR NOTICE\r\n");
-        printf("%s\n", strReply.c_str());
-        piReply = reply(sockpi);
-        printf("%s\n", piReply.c_str());
-        ftpSleep();
+        getFile(sockpi, "NOTICE");
 
         // QUIT the connection and leave the server
-        printf("***Sending QUIT to the server, and closing the connection...***\n");
-        strReply = requestReply(sockpi, "QUIT\r\n");
-        printf("%s\n", strReply.c_str());
-        close(sockpi);
-        ftpSleep();
+        quitConnection(sockpi);
+
+        //Create an interface to use the client
+        bool ftpActive = true;
+        std::string userInput = "";
+        while(ftpActive) {
+                displayUserMessage("Please enter a command:");
+                displayMessage("LIST - Show the files in the root directory");
+                displayMessage("RETR [filename] - Retrieve a file from the root directory");
+                displayMessage("QUIT - Leave the ftpclient");
+                displayMessage("");
+                std::getline (std::cin, userInput);
+        }
 
         printf("***Goodbye! Have a nice day!***\n");
         return 0;
