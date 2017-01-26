@@ -176,8 +176,7 @@ int main(int argc, char *argv[])
         printf("%s\n", strReply.c_str());
         ftpSleep();
 
-        // TODO implement PASV, LIST, RETR.
-        // Hint: implement a function that set the SP in passive mode and accept commands.
+        // LIST files in the server
         printf("***Listing Files, this may take a while...***\n");
         strReply = passiveRequestReply(sockpi, "LIST\r\n");
         printf("%s\n", strReply.c_str());
@@ -185,11 +184,19 @@ int main(int argc, char *argv[])
         printf("%s\n", piReply.c_str());
         ftpSleep();
 
+        // RETR a file from a server
         printf("***Retrieving a file, this may take a while...***\n");
         strReply = passiveRequestReply(sockpi, "RETR NOTICE\r\n");
         printf("%s\n", strReply.c_str());
         piReply = reply(sockpi);
         printf("%s\n", piReply.c_str());
+        ftpSleep();
+
+        // QUIT the connection and leave the server
+        printf("***Sending QUIT to the server, and closing the connection...***\n");
+        strReply = requestReply(sockpi, "QUIT\r\n");
+        printf("%s\n", strReply.c_str());
+        close(sockpi);
         ftpSleep();
 
         printf("***Goodbye! Have a nice day!***\n");
