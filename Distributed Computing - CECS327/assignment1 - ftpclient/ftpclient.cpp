@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
         strReply = reply(sockpi);
         printf("%s\n", strReply.c_str());
 
-        printf("***Logging into server***\n");
+        displayUserMessage("Logging into server");
         strReply = requestReply(sockpi, "USER anonymous\r\n");
         // TODO parse srtReply to obtain the status.
         // Let the system act according to the status and display
@@ -240,28 +240,43 @@ int main(int argc, char *argv[])
         printf("%s\n", strReply.c_str());
         ftpSleep();
 
-        // LIST files in the server
-        listFiles(sockpi);
-
-        // RETR a file from a server
-        getFile(sockpi, "NOTICE");
-
-        // QUIT the connection and leave the server
-        quitConnection(sockpi);
-
         //Create an interface to use the client
         bool ftpActive = true;
         std::string userInput = "";
         while(ftpActive) {
+                //Display the Available commands
                 displayUserMessage("Please enter a command:");
                 displayMessage("LIST - Show the files in the root directory");
-                displayMessage("RETR [filename] - Retrieve a file from the root directory");
+                displayMessage("RETR - Retrieve a file from the root directory");
                 displayMessage("QUIT - Leave the ftpclient");
                 displayMessage("");
+
+                //Get the user input
                 std::getline (std::cin, userInput);
+
+                //Find the input command
+                if(strcmp(userInput.c_str(), "LIST") == 0) {
+                        // LIST files in the server
+                        listFiles(sockpi);
+                } else if(strcmp(userInput.c_str(), "RETR") == 0) {
+                        //GET the file
+
+                        displayUserMessage("Enter the name of the file(case sensitive):");
+                        //Get the user input
+                        std::getline (std::cin, userInput);
+
+                        // RETR a file from a server
+                        getFile(sockpi, userInput);
+                } else if(strcmp(userInput.c_str(), "QUIT") == 0) {
+                        // QUIT the connection and leave the server
+                        quitConnection(sockpi);
+                        ftpActive = false;
+                } else {
+                        displayMessage("Unrecognized Command");
+                }
         }
 
-        printf("***Goodbye! Have a nice day!***\n");
-        return 0;
+        //Prompt the user of a nice goodbye
+        displayUserMessage("Goodbye! Have a nice day!");
         exit(0);
 }
