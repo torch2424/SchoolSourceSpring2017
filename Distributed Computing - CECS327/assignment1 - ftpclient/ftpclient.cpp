@@ -48,12 +48,14 @@ void displayMessage(std::string message) {
         printf("%s%s%s\n", NORMAL, message.c_str(), NORMAL);
 }
 
+//Display Message with nice stars and green color
 void displayUserMessage(std::string message) {
         printf("%s*********************************\n", GREEN);
         printf("%s\n", message.c_str());
         printf("*********************************%s\n", NORMAL);
 }
 
+//Display Message with nice stars and red color
 void displayUserError(std::string message) {
         printf("\n\n\n");
         printf("%s*********************************\n", RED);
@@ -61,6 +63,7 @@ void displayUserError(std::string message) {
         printf("*********************************%s\n", NORMAL);
 }
 
+//Create a connection with the specified host
 int createConnection(std::string host, int port)
 {
         int s;
@@ -92,11 +95,13 @@ int createConnection(std::string host, int port)
         return s;
 }
 
+// Send a request to our connected server
 int request(int sock, std::string message)
 {
         return send(sock, message.c_str(), message.size(), 0);
 }
 
+//Get the reply from a server after a request
 std::string reply(int s)
 {
         std::string strReply;
@@ -112,6 +117,8 @@ std::string reply(int s)
         return strReply;
 }
 
+//request from the server, and then handle the reply
+//Utilizeses the helper functions, request(), and reply()
 std::string requestReply(int s, std::string message)
 {
         if (request(s, message) > 0)
@@ -134,6 +141,8 @@ bool isReplyCodeValid(std::string replyCode, int expectedCode) {
         return false;
 }
 
+//Send a request and reply to the server. Wrap the request around
+//PASV, in order to allow for listing and retreiving files.
 std::string passiveRequestReply(int socket, std::string message) {
 
         //First, set to passive mode
@@ -231,6 +240,7 @@ void quitConnection(int socket) {
 
 int main(int argc, char *argv[])
 {
+        //Initialize some variables
         int sockpi;
         std::string strReply;
         std::string piReply;
@@ -250,10 +260,8 @@ int main(int argc, char *argv[])
 
         displayUserMessage("Logging into server");
         strReply = requestReply(sockpi, "USER anonymous\r\n");
-        // TODO parse srtReply to obtain the status.
+        // parse srtReply to obtain the status.
         // Let the system act according to the status and display
-        // friendly message to the user
-        // You can see the ouput using std::cout << strReply  << std::endl;
         printf("%s\n", strReply.c_str());
         if(!isReplyCodeValid(strReply, 331)) exit(0);
         strReply = requestReply(sockpi, "PASS asa@asas.com\r\n");
