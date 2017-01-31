@@ -52,11 +52,13 @@ void ftpSleep() {
 }
 
 //!Helper functions for displaying messages
+//!@param message - a std::string containing the message to display to the user
 void displayMessage(std::string message) {
         printf("%s%s%s\n", NORMAL, message.c_str(), NORMAL);
 }
 
 //!Display Message with nice stars and green color
+//!@param message - a std::string containing the message to display to the user
 void displayUserMessage(std::string message) {
         printf("%s*********************************\n", GREEN);
         printf("%s\n", message.c_str());
@@ -64,6 +66,7 @@ void displayUserMessage(std::string message) {
 }
 
 //!Display Message with nice stars and red color
+//!@param message - a std::string containing the message to display to the user
 void displayUserError(std::string message) {
         printf("\n\n\n");
         printf("%s*********************************\n", RED);
@@ -72,6 +75,8 @@ void displayUserError(std::string message) {
 }
 
 //!Create a connection with the specified host
+//!@param host - a std::string containing the ip of the host
+//!@param port - an int containing the port of the host
 int createConnection(std::string host, int port)
 {
         int s;
@@ -104,12 +109,15 @@ int createConnection(std::string host, int port)
 }
 
 //!Send a request to our connected server
+//! @param sock - the socket connection of the host
+//! @param message - an std::string containing the protocol message
 int request(int sock, std::string message)
 {
         return send(sock, message.c_str(), message.size(), 0);
 }
 
 //!Get the reply from a server after a request
+//!@param s - the socket connection we are using
 std::string reply(int s)
 {
         std::string strReply;
@@ -127,6 +135,8 @@ std::string reply(int s)
 
 //!Request from the server, and then handle the reply,
 //!utilizeses the helper functions, request(), and reply()
+//!@param s - the socket connection we are using
+//! @param message - an std::string containing the protocol message
 std::string requestReply(int s, std::string message)
 {
         if (request(s, message) > 0)
@@ -137,6 +147,8 @@ std::string requestReply(int s, std::string message)
 }
 
 //!Check reply codes for errors
+//!@param replyCode - the reply message we received from the server, containing the code
+//!@param expectedCode - the expected code we should have received from the server
 bool isReplyCodeValid(std::string replyCode, int expectedCode) {
         // Parse the code from the string
         int serverCode = atoi(replyCode.c_str());
@@ -151,6 +163,8 @@ bool isReplyCodeValid(std::string replyCode, int expectedCode) {
 
 //!Send a request and reply to the server. Wrap the request around
 //!PASV, in order to allow for listing and retreiving files.
+//!@param socket - the socket connection we are using
+//! @param message - an std::string containing the protocol message
 std::string passiveRequestReply(int socket, std::string message) {
 
         //First, set to passive mode
@@ -206,6 +220,7 @@ std::string passiveRequestReply(int socket, std::string message) {
 }
 
 //!List Files From the Server
+//!@param socket - the socket connection we are using
 void listFiles(int socket) {
         displayUserMessage("Listing Files from the server root directory");
         std::string fileListing = passiveRequestReply(socket, "LIST\r\n");
@@ -217,6 +232,8 @@ void listFiles(int socket) {
 }
 
 //!Get a file from the server
+//!@param socket - the socket connection we are using
+//!@param fileName - the name of the file that you are trying to download from the server
 void getFile(int socket, std::string fileName) {
         //Format/Display the user message
         std::stringstream formattedMessage;
@@ -237,6 +254,7 @@ void getFile(int socket, std::string fileName) {
 }
 
 //!Send QUIT to the server
+//!@param socket - the socket connection we are using
 void quitConnection(int socket) {
         displayUserMessage("Sending QUIT to the server, and closing the connection...");
         std::string strReply = requestReply(socket, "QUIT\r\n");
@@ -247,6 +265,8 @@ void quitConnection(int socket) {
 }
 
 //!main function called at start of the program
+//!@param arc - the number of passed arguments
+//!@param argv - array of the arguments that were passed in
 int main(int argc, char *argv[])
 {
         //Initialize some variables
