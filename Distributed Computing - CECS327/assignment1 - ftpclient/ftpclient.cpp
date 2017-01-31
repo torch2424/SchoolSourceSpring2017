@@ -77,6 +77,7 @@ void displayUserError(std::string message) {
 //!Create a connection with the specified host
 //!@param host - a std::string containing the ip of the host
 //!@param port - an int containing the port of the host
+//!@returns an integer socket for the new connection
 int createConnection(std::string host, int port)
 {
         int s;
@@ -111,6 +112,7 @@ int createConnection(std::string host, int port)
 //!Send a request to our connected server
 //! @param sock - the socket connection of the host
 //! @param message - an std::string containing the protocol message
+//!@returns the response from the request
 int request(int sock, std::string message)
 {
         return send(sock, message.c_str(), message.size(), 0);
@@ -118,6 +120,7 @@ int request(int sock, std::string message)
 
 //!Get the reply from a server after a request
 //!@param s - the socket connection we are using
+//!@returns the reply (usually a message) from the server
 std::string reply(int s)
 {
         std::string strReply;
@@ -137,6 +140,7 @@ std::string reply(int s)
 //!utilizeses the helper functions, request(), and reply()
 //!@param s - the socket connection we are using
 //! @param message - an std::string containing the protocol message
+//!@returns the reply (usually a message) from the server
 std::string requestReply(int s, std::string message)
 {
         if (request(s, message) > 0)
@@ -149,6 +153,7 @@ std::string requestReply(int s, std::string message)
 //!Check reply codes for errors
 //!@param replyCode - the reply message we received from the server, containing the code
 //!@param expectedCode - the expected code we should have received from the server
+//!@returns true if the codes match, false if not
 bool isReplyCodeValid(std::string replyCode, int expectedCode) {
         // Parse the code from the string
         int serverCode = atoi(replyCode.c_str());
@@ -165,6 +170,7 @@ bool isReplyCodeValid(std::string replyCode, int expectedCode) {
 //!PASV, in order to allow for listing and retreiving files.
 //!@param socket - the socket connection we are using
 //! @param message - an std::string containing the protocol message
+//!@returns the reply (usually a message) from the server
 std::string passiveRequestReply(int socket, std::string message) {
 
         //First, set to passive mode
