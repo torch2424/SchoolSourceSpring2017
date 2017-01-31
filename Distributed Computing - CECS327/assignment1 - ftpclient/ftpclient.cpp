@@ -19,7 +19,7 @@
 #include <iostream>    //cout
 #include <string>
 #include <stdio.h> //printf
-#include <stdlib.h>
+#include <stdlib.h> //atoi
 #include <string.h>    //strlen
 #include <sstream>
 #include <sys/socket.h>    //socket
@@ -39,8 +39,8 @@
 
 //Helper function for sleeping
 void ftpSleep() {
-        //Sleep for 500 milliseconds (500000 microseconds)
-        usleep(500000);
+        //Sleep for 200 milliseconds (200000 microseconds)
+        usleep(200000);
 }
 
 //Helper functions for displaying messages
@@ -55,6 +55,7 @@ void displayUserMessage(std::string message) {
 }
 
 void displayUserError(std::string message) {
+        printf("\n\n\n");
         printf("%s*********************************\n", RED);
         printf("%s\n", message.c_str());
         printf("*********************************%s\n", NORMAL);
@@ -120,11 +121,25 @@ std::string requestReply(int s, std::string message)
         return "";
 }
 
+//Check reply codes for errors
+bool isReplyCodeValid(std::string replyCode, int expectedCode) {
+        // Parse the code from the string
+        int serverCode = atoi(replyCode.c_str());
+
+        //Check if the two codes are the same
+        if(serverCode == expectedCode || serverCode == 0) return true;
+        std::stringstream unexpectedError;
+        unexpectedError << "Unexpected Code: " << serverCode << "\nExpected: " << expectedCode << "\n";
+        displayUserError(unexpectedError.str());
+        return false;
+}
+
 std::string passiveRequestReply(int socket, std::string message) {
 
         //First, set to passive mode
         std::string passiveReply = requestReply(socket, "PASV\r\n");
         ftpSleep();
+        if(!isReplyCodeValid(passiveReply, 227)) exit(0);
 
         //Parse our ip and port
         //Grab the sub string of ip and port
@@ -159,8 +174,9 @@ std::string passiveRequestReply(int socket, std::string message) {
         ftpSleep();
 
         //Ask the pi socket for a response
-        requestReply(socket, message);
+        std::string piSocketReply = requestReply(socket, message);
         ftpSleep();
+        if(!isReplyCodeValid(piSocketReply, 150)) exit(0);
 
         //Pass to the request reply function with the message and new connection
         std::string dtpResponse = reply(newConnection);
@@ -178,6 +194,7 @@ void listFiles(int socket) {
         std::string fileListing = passiveRequestReply(socket, "LIST\r\n");
         displayMessage(fileListing);
         std::string serverReply = reply(socket);
+        if(!isReplyCodeValid(serverReply, 226)) exit(0);
         displayMessage(serverReply);
         ftpSleep();
 }
@@ -197,6 +214,7 @@ void getFile(int socket, std::string fileName) {
         //Print the responses
         displayMessage(fileReply);
         std::string socketReply = reply(socket);
+        if(!isReplyCodeValid(socketReply, 226)) exit(0);
         displayMessage(socketReply);
         ftpSleep();
 }
@@ -227,6 +245,7 @@ int main(int argc, char *argv[])
         else
                 sockpi = createConnection("130.179.16.134", 21);
         strReply = reply(sockpi);
+        if(!isReplyCodeValid(strReply, 220)) exit(0);
         printf("%s\n", strReply.c_str());
 
         displayUserMessage("Logging into server");
@@ -236,7 +255,9 @@ int main(int argc, char *argv[])
         // friendly message to the user
         // You can see the ouput using std::cout << strReply  << std::endl;
         printf("%s\n", strReply.c_str());
+        if(!isReplyCodeValid(strReply, 331)) exit(0);
         strReply = requestReply(sockpi, "PASS asa@asas.com\r\n");
+        if(!isReplyCodeValid(strReply, 230)) exit(0);
         printf("%s\n", strReply.c_str());
         ftpSleep();
 
