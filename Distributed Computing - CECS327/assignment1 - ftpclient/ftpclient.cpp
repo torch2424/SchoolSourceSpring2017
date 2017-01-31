@@ -1,8 +1,13 @@
-/**
-    C++ client example using sockets.
-    This programs can be compiled in linux and with minor modification in
-     mac (mainly on the name of the headers)
-    Windows requires extra lines of code and different headers
+/*! @mainpage
+ *
+ * @section intro_sec Introduction
+ *
+ * Ftp Client for CECS 327.
+ * @section sec Header Comments
+ * C++ client example using sockets.
+   This programs can be compiled in linux and with minor modification in
+    mac (mainly on the name of the headers)
+   Windows requires extra lines of code and different headers
  #define WIN32_LEAN_AND_MEAN
 
  #include <windows.h>
@@ -16,6 +21,9 @@
    iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
    ...
  */
+
+// Need this comment to make it work with doxygen
+/** @file */
 #include <iostream>    //cout
 #include <string>
 #include <stdio.h> //printf
@@ -37,25 +45,25 @@
 #define RED  "\x1B[31m"
 #define GREEN  "\x1B[32m"
 
-//Helper function for sleeping
+//! Helper function for sleeping
 void ftpSleep() {
         //Sleep for 200 milliseconds (200000 microseconds)
         usleep(200000);
 }
 
-//Helper functions for displaying messages
+//!Helper functions for displaying messages
 void displayMessage(std::string message) {
         printf("%s%s%s\n", NORMAL, message.c_str(), NORMAL);
 }
 
-//Display Message with nice stars and green color
+//!Display Message with nice stars and green color
 void displayUserMessage(std::string message) {
         printf("%s*********************************\n", GREEN);
         printf("%s\n", message.c_str());
         printf("*********************************%s\n", NORMAL);
 }
 
-//Display Message with nice stars and red color
+//!Display Message with nice stars and red color
 void displayUserError(std::string message) {
         printf("\n\n\n");
         printf("%s*********************************\n", RED);
@@ -63,7 +71,7 @@ void displayUserError(std::string message) {
         printf("*********************************%s\n", NORMAL);
 }
 
-//Create a connection with the specified host
+//!Create a connection with the specified host
 int createConnection(std::string host, int port)
 {
         int s;
@@ -95,13 +103,13 @@ int createConnection(std::string host, int port)
         return s;
 }
 
-// Send a request to our connected server
+//!Send a request to our connected server
 int request(int sock, std::string message)
 {
         return send(sock, message.c_str(), message.size(), 0);
 }
 
-//Get the reply from a server after a request
+//!Get the reply from a server after a request
 std::string reply(int s)
 {
         std::string strReply;
@@ -117,8 +125,8 @@ std::string reply(int s)
         return strReply;
 }
 
-//request from the server, and then handle the reply
-//Utilizeses the helper functions, request(), and reply()
+//!Request from the server, and then handle the reply,
+//!utilizeses the helper functions, request(), and reply()
 std::string requestReply(int s, std::string message)
 {
         if (request(s, message) > 0)
@@ -128,7 +136,7 @@ std::string requestReply(int s, std::string message)
         return "";
 }
 
-//Check reply codes for errors
+//!Check reply codes for errors
 bool isReplyCodeValid(std::string replyCode, int expectedCode) {
         // Parse the code from the string
         int serverCode = atoi(replyCode.c_str());
@@ -141,8 +149,8 @@ bool isReplyCodeValid(std::string replyCode, int expectedCode) {
         return false;
 }
 
-//Send a request and reply to the server. Wrap the request around
-//PASV, in order to allow for listing and retreiving files.
+//!Send a request and reply to the server. Wrap the request around
+//!PASV, in order to allow for listing and retreiving files.
 std::string passiveRequestReply(int socket, std::string message) {
 
         //First, set to passive mode
@@ -197,7 +205,7 @@ std::string passiveRequestReply(int socket, std::string message) {
         return dtpResponse;
 }
 
-//List Files From the Server
+//!List Files From the Server
 void listFiles(int socket) {
         displayUserMessage("Listing Files from the server root directory");
         std::string fileListing = passiveRequestReply(socket, "LIST\r\n");
@@ -208,7 +216,7 @@ void listFiles(int socket) {
         ftpSleep();
 }
 
-//Get a file from the server
+//!Get a file from the server
 void getFile(int socket, std::string fileName) {
         //Format/Display the user message
         std::stringstream formattedMessage;
@@ -228,16 +236,17 @@ void getFile(int socket, std::string fileName) {
         ftpSleep();
 }
 
-//Send QUIT to the server
+//!Send QUIT to the server
 void quitConnection(int socket) {
         displayUserMessage("Sending QUIT to the server, and closing the connection...");
         std::string strReply = requestReply(socket, "QUIT\r\n");
+        if(!isReplyCodeValid(strReply, 221)) exit(0);
         displayMessage(strReply);
         close(socket);
         ftpSleep();
 }
 
-
+//!main function called at start of the program
 int main(int argc, char *argv[])
 {
         //Initialize some variables

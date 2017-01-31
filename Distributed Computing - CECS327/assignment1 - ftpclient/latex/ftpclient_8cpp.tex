@@ -1,0 +1,89 @@
+\hypertarget{ftpclient_8cpp}{}\section{ftpclient.\+cpp File Reference}
+\label{ftpclient_8cpp}\index{ftpclient.\+cpp@{ftpclient.\+cpp}}
+{\ttfamily \#include $<$iostream$>$}\newline
+{\ttfamily \#include $<$string$>$}\newline
+{\ttfamily \#include $<$stdio.\+h$>$}\newline
+{\ttfamily \#include $<$stdlib.\+h$>$}\newline
+{\ttfamily \#include $<$string.\+h$>$}\newline
+{\ttfamily \#include $<$sstream$>$}\newline
+{\ttfamily \#include $<$sys/socket.\+h$>$}\newline
+{\ttfamily \#include $<$arpa/inet.\+h$>$}\newline
+{\ttfamily \#include $<$netinet/in.\+h$>$}\newline
+{\ttfamily \#include $<$sys/types.\+h$>$}\newline
+{\ttfamily \#include $<$unistd.\+h$>$}\newline
+{\ttfamily \#include $<$netdb.\+h$>$}\newline
+{\ttfamily \#include $<$vector$>$}\newline
+\subsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{ftpclient_8cpp_af7b7dc9a200cb1404c280bd500fd1551}\label{ftpclient_8cpp_af7b7dc9a200cb1404c280bd500fd1551}} 
+\#define {\bfseries B\+U\+F\+F\+E\+R\+\_\+\+L\+E\+N\+G\+TH}~2048
+\item 
+\mbox{\Hypertarget{ftpclient_8cpp_a1291f416b069313021b519eea62d5bf1}\label{ftpclient_8cpp_a1291f416b069313021b519eea62d5bf1}} 
+\#define {\bfseries N\+O\+R\+M\+AL}~\char`\"{}\textbackslash{}x1B\mbox{[}0m\char`\"{}
+\item 
+\mbox{\Hypertarget{ftpclient_8cpp_a8d23feea868a983c8c2b661e1e16972f}\label{ftpclient_8cpp_a8d23feea868a983c8c2b661e1e16972f}} 
+\#define {\bfseries R\+ED}~\char`\"{}\textbackslash{}x1B\mbox{[}31m\char`\"{}
+\item 
+\mbox{\Hypertarget{ftpclient_8cpp_acfbc006ea433ad708fdee3e82996e721}\label{ftpclient_8cpp_acfbc006ea433ad708fdee3e82996e721}} 
+\#define {\bfseries G\+R\+E\+EN}~\char`\"{}\textbackslash{}x1B\mbox{[}32m\char`\"{}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{ftpclient_8cpp_a8217e4e26d8fc10cc1bdba30038dd967}\label{ftpclient_8cpp_a8217e4e26d8fc10cc1bdba30038dd967}} 
+void \hyperlink{ftpclient_8cpp_a8217e4e26d8fc10cc1bdba30038dd967}{ftp\+Sleep} ()
+\begin{DoxyCompactList}\small\item\em Helper function for sleeping. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{ftpclient_8cpp_aff59582ef43bf05795e6fa143ea0f5d7}\label{ftpclient_8cpp_aff59582ef43bf05795e6fa143ea0f5d7}} 
+void \hyperlink{ftpclient_8cpp_aff59582ef43bf05795e6fa143ea0f5d7}{display\+Message} (std\+::string message)
+\begin{DoxyCompactList}\small\item\em Helper functions for displaying messages. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{ftpclient_8cpp_a7a624d270766c8a340b761306cb66f13}\label{ftpclient_8cpp_a7a624d270766c8a340b761306cb66f13}} 
+void \hyperlink{ftpclient_8cpp_a7a624d270766c8a340b761306cb66f13}{display\+User\+Message} (std\+::string message)
+\begin{DoxyCompactList}\small\item\em Display Message with nice stars and green color. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{ftpclient_8cpp_aece0d4a2ffe33ebe88920a6cb638f871}\label{ftpclient_8cpp_aece0d4a2ffe33ebe88920a6cb638f871}} 
+void \hyperlink{ftpclient_8cpp_aece0d4a2ffe33ebe88920a6cb638f871}{display\+User\+Error} (std\+::string message)
+\begin{DoxyCompactList}\small\item\em Display Message with nice stars and red color. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{ftpclient_8cpp_a24afbbf563bda14636d60fef55726742}\label{ftpclient_8cpp_a24afbbf563bda14636d60fef55726742}} 
+int \hyperlink{ftpclient_8cpp_a24afbbf563bda14636d60fef55726742}{create\+Connection} (std\+::string host, int port)
+\begin{DoxyCompactList}\small\item\em Create a connection with the specified host. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{ftpclient_8cpp_ac2aa65001102647fd5589df6bcfe9a03}\label{ftpclient_8cpp_ac2aa65001102647fd5589df6bcfe9a03}} 
+int \hyperlink{ftpclient_8cpp_ac2aa65001102647fd5589df6bcfe9a03}{request} (int sock, std\+::string message)
+\begin{DoxyCompactList}\small\item\em Send a request to our connected server. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{ftpclient_8cpp_a0a7aa7cf7186b69af4a474ae41119998}\label{ftpclient_8cpp_a0a7aa7cf7186b69af4a474ae41119998}} 
+std\+::string \hyperlink{ftpclient_8cpp_a0a7aa7cf7186b69af4a474ae41119998}{reply} (int s)
+\begin{DoxyCompactList}\small\item\em Get the reply from a server after a request. \end{DoxyCompactList}\item 
+std\+::string \hyperlink{ftpclient_8cpp_a5ed8e88d0a7c4df93fc8a177e5356d3b}{request\+Reply} (int s, std\+::string message)
+\item 
+\mbox{\Hypertarget{ftpclient_8cpp_ac32a75e3f35d4f17e1f56148a261e5c5}\label{ftpclient_8cpp_ac32a75e3f35d4f17e1f56148a261e5c5}} 
+bool \hyperlink{ftpclient_8cpp_ac32a75e3f35d4f17e1f56148a261e5c5}{is\+Reply\+Code\+Valid} (std\+::string reply\+Code, int expected\+Code)
+\begin{DoxyCompactList}\small\item\em Check reply codes for errors. \end{DoxyCompactList}\item 
+std\+::string \hyperlink{ftpclient_8cpp_a698eb4911b61158e7e3e55b272ce5ad4}{passive\+Request\+Reply} (int socket, std\+::string message)
+\item 
+\mbox{\Hypertarget{ftpclient_8cpp_a4b5489c6849965541f55c54fce841d00}\label{ftpclient_8cpp_a4b5489c6849965541f55c54fce841d00}} 
+void \hyperlink{ftpclient_8cpp_a4b5489c6849965541f55c54fce841d00}{list\+Files} (int socket)
+\begin{DoxyCompactList}\small\item\em List Files From the Server. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{ftpclient_8cpp_adbab2f0bf833384f5c6dd61a67d1bbef}\label{ftpclient_8cpp_adbab2f0bf833384f5c6dd61a67d1bbef}} 
+void \hyperlink{ftpclient_8cpp_adbab2f0bf833384f5c6dd61a67d1bbef}{get\+File} (int socket, std\+::string file\+Name)
+\begin{DoxyCompactList}\small\item\em Get a file from the server. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{ftpclient_8cpp_a34608ee061fae6422e59c8e318fa6c15}\label{ftpclient_8cpp_a34608ee061fae6422e59c8e318fa6c15}} 
+void \hyperlink{ftpclient_8cpp_a34608ee061fae6422e59c8e318fa6c15}{quit\+Connection} (int socket)
+\begin{DoxyCompactList}\small\item\em Send Q\+U\+IT to the server. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{ftpclient_8cpp_a0ddf1224851353fc92bfbff6f499fa97}\label{ftpclient_8cpp_a0ddf1224851353fc92bfbff6f499fa97}} 
+int \hyperlink{ftpclient_8cpp_a0ddf1224851353fc92bfbff6f499fa97}{main} (int argc, char $\ast$argv\mbox{[}$\,$\mbox{]})
+\begin{DoxyCompactList}\small\item\em main function called at start of the program \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{ftpclient_8cpp_a698eb4911b61158e7e3e55b272ce5ad4}\label{ftpclient_8cpp_a698eb4911b61158e7e3e55b272ce5ad4}} 
+\index{ftpclient.\+cpp@{ftpclient.\+cpp}!passive\+Request\+Reply@{passive\+Request\+Reply}}
+\index{passive\+Request\+Reply@{passive\+Request\+Reply}!ftpclient.\+cpp@{ftpclient.\+cpp}}
+\subsubsection{\texorpdfstring{passive\+Request\+Reply()}{passiveRequestReply()}}
+{\footnotesize\ttfamily std\+::string passive\+Request\+Reply (\begin{DoxyParamCaption}\item[{int}]{socket,  }\item[{std\+::string}]{message }\end{DoxyParamCaption})}
+
+Send a request and reply to the server. Wrap the request around P\+A\+SV, in order to allow for listing and retreiving files. \mbox{\Hypertarget{ftpclient_8cpp_a5ed8e88d0a7c4df93fc8a177e5356d3b}\label{ftpclient_8cpp_a5ed8e88d0a7c4df93fc8a177e5356d3b}} 
+\index{ftpclient.\+cpp@{ftpclient.\+cpp}!request\+Reply@{request\+Reply}}
+\index{request\+Reply@{request\+Reply}!ftpclient.\+cpp@{ftpclient.\+cpp}}
+\subsubsection{\texorpdfstring{request\+Reply()}{requestReply()}}
+{\footnotesize\ttfamily std\+::string request\+Reply (\begin{DoxyParamCaption}\item[{int}]{s,  }\item[{std\+::string}]{message }\end{DoxyParamCaption})}
+
+Request from the server, and then handle the reply, utilizeses the helper functions, \hyperlink{ftpclient_8cpp_ac2aa65001102647fd5589df6bcfe9a03}{request()}, and \hyperlink{ftpclient_8cpp_a0a7aa7cf7186b69af4a474ae41119998}{reply()} 

@@ -1,0 +1,7 @@
+\hypertarget{index_intro_sec}{}\section{Introduction}\label{index_intro_sec}
+Ftp Client for C\+E\+CS 327. \hypertarget{index_sec}{}\section{Header Comments}\label{index_sec}
+C++ client example using sockets. This programs can be compiled in linux and with minor modification in mac (mainly on the name of the headers) Windows requires extra lines of code and different headers \#define W\+I\+N32\+\_\+\+L\+E\+A\+N\+\_\+\+A\+N\+D\+\_\+\+M\+E\+AN
+
+\#include $<$windows.\+h$>$ \#include $<$winsock2.\+h$>$ \#include $<$ws2tcpip.\+h$>$
+
+Need to link with Ws2\+\_\+32.\+lib, Mswsock.\+lib, and Advapi32.\+lib \#pragma comment(lib, \char`\"{}\+Ws2\+\_\+32.\+lib\char`\"{}) ... W\+S\+A\+D\+A\+TA wsa\+Data; i\+Result = W\+S\+A\+Startup(\+M\+A\+K\+E\+W\+O\+R\+D(2,2), \&wsa\+Data); ... 

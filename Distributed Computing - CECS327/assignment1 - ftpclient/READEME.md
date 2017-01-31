@@ -1,5 +1,5 @@
-# Ftp Client project
+# Ftp Client Project README
 
-A nice alternative ftp client: ftp://speedtest.tele2.net
+A nice alternative ftp server: ftp://speedtest.tele2.net
 
 # Due Feb, 9th
