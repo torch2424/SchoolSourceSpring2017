@@ -6,6 +6,7 @@
 function projectOne
 
 % To model a deck of cards, we use a MATLAB array
+
 deck = {'AH'; '2H'; '3H'; '4H'; '5H'; '6H'; '7H'; '8H'; '9H'; '10H'; 'JH'; 'QH'; 'KH'; ...
        'AS'; '2S'; '3S'; '4S'; '5S'; '6S'; '7S'; '8S'; '9S'; '10S'; 'JS'; 'QS'; 'KS'; ...
        'AD'; '2D'; '3D'; '4D'; '5D'; '6D'; '7D'; '8D'; '9D'; '10D'; 'JD'; 'QD'; 'KD'; ...
@@ -29,11 +30,11 @@ for i = 1:trials
 
     % Sort our hand
     sortedHand = sort(hand);
-    % disp('sortedHand = ')
-    % disp(sortedHand)
+    disp('sortedHand = ')
+    disp(sortedHand)
     
-    % Using String Compare to find if two values in the hand match
-    if (strcmp(sortedHand{1}(1:1), sortedHand{4}(1:1)) == 1 || strcmp(sortedHand{2}(1:1), sortedHand{5}(1:1)) == 1)
+    % Checking 
+    if (strcmp(sortedHand{1}, sortedHand{4}) == 1 || strcmp(sortedHand{2}, sortedHand{5}) == 1)
         k = k + 1;
     end
 end
@@ -45,4 +46,4 @@ disp('Number of trials')
 disp(trials)
 
 probability = k / trials;
-fprintf('The probability of a four of a kind hand using this simulation is: %d\n', probability)
+fprintf('The probability of a four of a kind hand using this simulation is: %d', probability)
