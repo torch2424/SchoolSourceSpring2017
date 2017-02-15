@@ -47,4 +47,4 @@ disp('Number of trials')
 disp(trials)
 
 probability = k / trials * 100;
-fprintf('The probability of a four of a kind hand using this simulation is: %d %%\n', probability)
+fprintf('The probability of a four of a kind hand using this simulation is: %d%%\n', probability)
