@@ -11,63 +11,17 @@ import org.json.simple.*;
  **********************************/
 public class Chat {
 
-/*
-   Json Messages:
 
-   {
-        "type" :  "JOIN",
-        "parameters" :
-               {
-                    "myAlias" : string,
-                    "myPort"  : number
-               }
-   }
-
-   {
-        "type" :  "ACCEPT",
-        "parameters" :
-               {
-                   "ipPred"    : string,
-                   "portPred"  : number
-               }
-    }
-
-    {
-         "type" :  "LEAVE",
-         "parameters" :
-         {
-             "ipPred"    : string,
-             "portPred"  : number
-         }
-    }
-
-   {
-         "type" :  "Put",
-        "parameters" :
-         {
-             "aliasSender"    : string,
-             "aliasReceiver"  : string,
-             "message"        : string
-        }
-   }
-
-   {
-        "type" :  "NEWSUCCESSOR",
-        "parameters" :
-        {
-            "ipSuccessor"    : string,
-            "portSuccessor"  : number
-        }
-   }
- */
 
 // My info
 public String alias;
 public int myPort;
-// Successor
+
+// Successor (Forward)
 public String ipSuccessor;
 public int portSuccessor;
-// Predecessor
+
+// Predecessor (Behind)
 public String ipPredecessor;
 public int portPredecessor;
 
@@ -76,6 +30,145 @@ public static boolean debugMode;
 public static void debugLog(String log) {
   if(debugMode) {
     System.out.println(log);
+  }
+}
+
+//Static class for our Json
+//Please see the getJsonJoin for documentation,
+//on how messages are constructed
+public static class ChatJson {
+
+  private static String JsonObjectToString(JSONObject jsonObject) {
+    String jsonString = "";
+    try {
+      //Convert the json object to a string, using StringWriter
+      StringWriter jsonStringWriter = new StringWriter();
+      jsonObject.writeJSONString(jsonStringWriter);
+      jsonString = jsonStringWriter.toString();
+    } catch(Exception e) {
+      System.out.println(e);
+      System.exit(1);
+    }
+
+    //Return the string
+    return jsonString;
+  }
+
+  public static String getJsonJoin(String myAlias, int myPort) {
+    /*
+    {
+         "type" :  "JOIN",
+         "parameters" :
+                {
+                     "myAlias" : string,
+                     "myPort"  : number
+                }
+    }
+    */
+    // Create the Json Objects, and add their prameters
+    JSONObject paramObject = new JSONObject();
+    paramObject.put("myAlias", myAlias);
+    paramObject.put("myPort", myPort);
+    JSONObject jsonObject = new JSONObject();
+    jsonObject.put("type", "JOIN");
+    jsonObject.put("parameters", paramObject);
+
+    //Convert the json object to a string, and return
+    return ChatJson.JsonObjectToString(jsonObject);
+  }
+
+  public static String getJsonAccept(String ipPrevious, int portPrevious) {
+    /*
+    {
+         "type" :  "ACCEPT",
+         "parameters" :
+                {
+                    "ipPred"    : string,
+                    "portPred"  : number
+                }
+     }
+    */
+    // Create the Json Objects, and add their prameters
+    JSONObject paramObject = new JSONObject();
+    paramObject.put("ipPred", ipPrevious);
+    paramObject.put("portPred", portPrevious);
+    JSONObject jsonObject = new JSONObject();
+    jsonObject.put("type", "ACCEPT");
+    jsonObject.put("parameters", paramObject);
+
+    //Convert the json object to a string, and return
+    return ChatJson.JsonObjectToString(jsonObject);
+  }
+
+  public static String getJsonLeave(String ipPrevious, int portPrevious) {
+    /*
+    {
+         "type" :  "LEAVE",
+         "parameters" :
+         {
+             "ipPred"    : string,
+             "portPred"  : number
+         }
+    }
+    */
+    // Create the Json Objects, and add their prameters
+    JSONObject paramObject = new JSONObject();
+    paramObject.put("ipPred", ipPrevious);
+    paramObject.put("portPred", portPrevious);
+    JSONObject jsonObject = new JSONObject();
+    jsonObject.put("type", "LEAVE");
+    jsonObject.put("parameters", paramObject);
+
+    //Convert the json object to a string, and return
+    return ChatJson.JsonObjectToString(jsonObject);
+  }
+
+  public static String getJsonPut(String aliasSender, String aliasReceiver, String message) {
+    /*
+    {
+          "type" :  "Put",
+         "parameters" :
+          {
+              "aliasSender"    : string,
+              "aliasReceiver"  : string,
+              "message"        : string
+         }
+    }
+    */
+    // Create the Json Objects, and add their prameters
+    JSONObject paramObject = new JSONObject();
+    paramObject.put("aliasSender", aliasSender);
+    paramObject.put("aliasReceiver", aliasReceiver);
+    paramObject.put("message", message);
+    JSONObject jsonObject = new JSONObject();
+    jsonObject.put("type", "PUT");
+    jsonObject.put("parameters", paramObject);
+
+    //Convert the json object to a string, and return
+    return ChatJson.JsonObjectToString(jsonObject);
+  }
+
+  public static String getJsonNewSuccessor(String ipNext, int portNext) {
+    /*
+    {
+         "type" :  "NEWSUCCESSOR",
+         "parameters" :
+         {
+             "ipSuccessor"    : string,
+             "portSuccessor"  : number
+         }
+    }
+    */
+    // Create the Json Objects, and add their prameters
+    JSONObject paramObject = new JSONObject();
+    paramObject.put("ipSuccessor", ipNext);
+    paramObject.put("portSuccessor", portNext);
+    JSONObject jsonObject = new JSONObject();
+    jsonObject.put("type", "NEWSUCCESSOR");
+    jsonObject.put("parameters", paramObject);
+
+    //Convert the json object to a string, and return
+    return ChatJson.JsonObjectToString(jsonObject);
   }
 }
 
@@ -156,23 +249,12 @@ public void run()
         {
             try {
               // Reastablish connection with server continuosly
-              Socket serverSocket = new Socket("localhost", 2424);
+              //Change local host to a passed ip (argv) to change the requested server
+              Socket serverSocket = new Socket("localhost", myPort);
               ObjectOutputStream oos = new ObjectOutputStream(serverSocket.getOutputStream());
               ObjectInputStream ois = new ObjectInputStream(serverSocket.getInputStream());
-
-              // Create the mssages m using JsonWriter and send it as stream
-              JSONObject paramObject = new JSONObject();
-              paramObject.put("myAlias", alias);
-              paramObject.put("myPort", myPort);
-              JSONObject joinObject = new JSONObject();
-              joinObject.put("type", "JOIN");
-              joinObject.put("parameters", paramObject);
-
-              //this sends the message
-              StringWriter jsonMessage = new StringWriter();
-              joinObject.writeJSONString(jsonMessage);
-              String stringMessage = jsonMessage.toString();
-              oos.writeObject(stringMessage);
+              String jsonJoin = ChatJson.getJsonJoin(alias, myPort);
+              oos.writeObject(jsonJoin);
               Thread.sleep(1000);
             } catch(Exception e) {
               System.out.println(e);
