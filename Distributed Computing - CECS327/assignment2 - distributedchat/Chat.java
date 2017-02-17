@@ -48,6 +48,10 @@ public static void debugLog(String log) {
   }
 }
 
+//Our initial join
+public static boolean initialJoin;
+//If we are currently disconnected
+public static boolean disconnected;
 //Chat command and messages
 public static ArrayList<String> chatMessages;
 
@@ -76,7 +80,10 @@ public static void main(String[] args) {
  * \param port where the server will listen
  **********************************/
 public void startChat() {
-  System.out.println("Starting Chat Application...");
+  //Initialize the app
+  Chat.initialJoin = false;
+  Chat.disconnected = true;
+
   // Initialization of the peer
   Thread server = new Thread(new Server());
   Thread client = new Thread(new Client());
@@ -265,6 +272,8 @@ public void run() {
                   Chat.debugLog("Got Message! " + message);
                   Chat.chatMessages.add(message);
 
+                  //TODO: Handle the different responses
+
                   //only if the message requires a response
                   //oos.write(m);
 
@@ -314,8 +323,34 @@ public void run()
 
     try {
     // The first thing to do is to join
-    // ask the ip and port when joining and set ipSuccessor = ip, portSuccessor = port
-    //Socket socket = new Socket(ipSuccessor, portSuccessor);
+    System.out.println("-------------------");
+    System.out.println(ANSI_CYAN + "Joining " + ipSuccessor + ":" +  portSuccessor + ANSI_WHITE);
+    System.out.println("-------------------");
+    // Reastablish connection with server continuosly
+    //Read the accept from the server
+    boolean waitingForAccept = true;
+    while(waitingForAccept) {
+      //Change local host to a passed ip (argv) to change the requested server
+      Socket serverSocket = new Socket(ipSuccessor, portSuccessor);
+
+      //Get our JSON streams
+      ObjectOutputStream oos = new ObjectOutputStream(serverSocket.getOutputStream());
+      ObjectInputStream ois = new ObjectInputStream(serverSocket.getInputStream());
+
+      //Send a Join to the server
+      String jsonJoin = ChatJson.getJsonJoin(alias, myPort);
+      oos.writeObject(jsonJoin);
+
+      //String serverResponse = (String) ois.readObject();
+      //System.out.println("Both Get Message?");
+
+      //TODO: Read the server response, and handle the accept
+
+      //Close the Server Socket
+      serverSocket.close();
+    }
+
+    //Finally start the UI, since we got accept
     Scanner consoleInput = new Scanner(System.in);
     boolean clientRunning = true;
         while (clientRunning)
