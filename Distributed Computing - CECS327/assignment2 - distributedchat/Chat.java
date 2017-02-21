@@ -5,6 +5,7 @@ import java.lang.*;
 
 //Json parsing
 import org.json.simple.*;
+import org.json.simple.parser.*;
 
 //Cli Parsing
 import com.beust.jcommander.*;
@@ -16,7 +17,16 @@ import com.beust.jcommander.*;
  **********************************/
 public class Chat {
 
-
+//Colors for our Terminal
+public static final String ANSI_CLS = "\u001b[2J";
+public static final String ANSI_HOME = "\u001b[H";
+public static final String ANSI_WHITE = "\u001B[37m";
+public static final String ANSI_RED = "\u001B[31m";
+public static final String ANSI_GREEN = "\u001B[32m";
+public static final String ANSI_YELLOW = "\u001B[33m";
+public static final String ANSI_BLUE = "\u001B[34m";
+public static final String ANSI_PURPLE = "\u001B[35m";
+public static final String ANSI_CYAN = "\u001B[36m";
 
 // My info
 //Useing JCommander to parse cli input
@@ -26,14 +36,14 @@ public String alias;
 public int myPort=8080;
 
 // Predecessor (Behind)
-public String ipPredecessor;
-public int portPredecessor;
+public static String ipPredecessor = "";
+public static int portPredecessor = -1;
 
 // Successor (Forward)
 @Parameter(names={"--host", "-h"}, description="The Host to connect to")
-public String ipSuccessor = "localhost";
+public static String ipSuccessor = "localhost";
 @Parameter(names={"--hostport", "-hp"}, description="The Port of the host to connect to")
-public int portSuccessor=8080;
+public static int portSuccessor = 8080;
 
 //How many messages to show on refresh
 @Parameter(names={"--limit", "-l"}, description="Limit Chat history length to the passed limit. 0 disables this feature")
@@ -41,12 +51,16 @@ public static int chatHistoryLength=0;
 
 //Debug logging
 @Parameter(names={"--debug", "-d"}, description="To Enable Debug logging")
-public static boolean debugMode=false;
+public static boolean debugMode = false;
 public static void debugLog(String log) {
   if(debugMode == true) {
     System.out.println(log);
   }
 }
+
+//Localhost only
+@Parameter(names={"--localhost-only", "-lo"}, description="To force connections to only go through localhost")
+public static boolean localhostOnly= false;
 
 //Our initial join
 public static boolean initialJoin;
@@ -128,6 +142,7 @@ public static class ChatJson {
          "parameters" :
                 {
                      "myAlias" : string,
+                     "myIp": string,
                      "myPort"  : number
                 }
     }
@@ -135,6 +150,20 @@ public static class ChatJson {
     // Create the Json Objects, and add their prameters
     JSONObject paramObject = new JSONObject();
     paramObject.put("myAlias", myAlias);
+    //Get the current ip of the device (client)
+    try {
+      if(Chat.localhostOnly) {
+        paramObject.put("myIp", "localhost");
+      } else {
+        //Get the host, and split by / to get ip
+        String fullHost = InetAddress.getLocalHost().toString();
+        String[] splitHost = fullHost.split("/");
+        paramObject.put("myIp", splitHost[1]);
+      }
+    } catch(Exception e) {
+      System.out.println("Could not get Ip Address: " + e);
+      System.exit(0);
+    }
     paramObject.put("myPort", myPort);
     JSONObject jsonObject = new JSONObject();
     jsonObject.put("type", "JOIN");
@@ -267,12 +296,46 @@ public void run() {
                   ObjectInputStream ois = new ObjectInputStream(clntSock.getInputStream());
                   ObjectOutputStream oos = new ObjectOutputStream(clntSock.getOutputStream());
                   //reads the message using JsonParser and handle the messages
-                  String message = (String) ois.readObject();
+                  String jsonRequest = (String) ois.readObject();
 
-                  Chat.debugLog("Got Message! " + message);
-                  Chat.chatMessages.add(message);
+                  Chat.debugLog("Got Message! " + jsonRequest);
+                  Chat.chatMessages.add(jsonRequest);
 
-                  //TODO: Handle the different responses
+                  //Declare our response
+                  String jsonResponse = "";
+
+                  //Boolean for if we are sending requests to other servers,
+                  // And waiting for another response
+                  boolean waitingForResponse = false;
+
+                  //Declare our Json Parser
+                  JSONParser parser = new JSONParser();
+                  try {
+                        //Parse the json Object, based on our expected schema
+                       JSONObject requestObject = (JSONObject) parser.parse(jsonRequest);
+                       String requestType = requestObject.get("type").toString();
+                       JSONObject requestParams = (JSONObject) parser.parse(requestObject.get("parameters").toString());
+
+                       if(requestType == "JOIN") {
+                         //We Have a client wanting to join our chat
+                         //We need to grab myAlias, and myPort
+                         String newAlias = requestParams.get("myAlias").toString();
+                         int newPort = Integer.valueOf(requestParams.get("myPort").toString());
+
+                         //If we have a predecessor, tell them they have a new Successor
+                         if(Chat.ipPredecessor.length() > 0 &&
+                            Chat.portPredecessor > -1) {
+
+                          }
+
+                         //Set the new client as our predecessor
+                       }
+                    } catch(ParseException pe){
+                      //Inform the client of a request error
+                      Chat.chatMessages.add(Chat.ANSI_RED +
+                        "Invalid Server Request: " + jsonRequest +
+                        Chat.ANSI_WHITE);
+                    }
 
                   //only if the message requires a response
                   //oos.write(m);
@@ -300,17 +363,6 @@ public void run() {
  **********************************/
 private class Client implements Runnable
 {
-
-  //Colors for our Terminal
-  private static final String ANSI_CLS = "\u001b[2J";
-  private static final String ANSI_HOME = "\u001b[H";
-  private static final String ANSI_WHITE = "\u001B[37m";
-  private static final String ANSI_RED = "\u001B[31m";
-  private static final String ANSI_GREEN = "\u001B[32m";
-  private static final String ANSI_YELLOW = "\u001B[33m";
-  private static final String ANSI_BLUE = "\u001B[34m";
-  private static final String ANSI_PURPLE = "\u001B[35m";
-  private static final String ANSI_CYAN = "\u001B[36m";
 
 public Client()
 {
@@ -356,15 +408,17 @@ public void run()
         while (clientRunning)
         {
             //Build Our UI
-            System.out.print(ANSI_CLS + ANSI_HOME);
+            System.out.print(Chat.ANSI_CLS + Chat.ANSI_HOME);
             System.out.flush();
 
             //Print Messages, descending order
             System.out.println("-------------------");
             if(chatHistoryLength != 0) {
-              System.out.println(ANSI_CYAN + "Messages (Limited to " + chatHistoryLength + ")" + ANSI_WHITE);
+              System.out.println(Chat.ANSI_CYAN +
+                "Messages (Limited to " + chatHistoryLength + ")" +
+                ANSI_WHITE);
             } else {
-              System.out.println(ANSI_CYAN + "Messages" + ANSI_WHITE);
+              System.out.println(Chat.ANSI_CYAN + "Messages" + Chat.ANSI_WHITE);
             }
             System.out.println("-------------------");
             int messagesToShow = Chat.chatMessages.size() - 1;
@@ -378,13 +432,16 @@ public void run()
             //Print Current input
             System.out.println("");
             System.out.println("-------------------");
-            System.out.println(ANSI_CYAN + "Chat Cheat Sheet:" + ANSI_WHITE);
+            System.out.println(Chat.ANSI_CYAN + "Chat Cheat Sheet:" + Chat.ANSI_WHITE);
             System.out.println("-------------------");
-            System.out.println(ANSI_GREEN + "Send Message" + ANSI_WHITE + " - @[alias] [Message]");
-            System.out.println(ANSI_GREEN + "Refesh Messages" + ANSI_WHITE + " - type ENTER/RETURN");
-            System.out.println(ANSI_GREEN + "Quit the application" + ANSI_WHITE + " - quit");
+            System.out.println(Chat.ANSI_GREEN + "Send Message" +
+              Chat.ANSI_WHITE + " - @[alias] [Message]");
+            System.out.println(Chat.ANSI_GREEN + "Refesh Messages" +
+              Chat.ANSI_WHITE + " - type ENTER/RETURN");
+            System.out.println(Chat.ANSI_GREEN + "Quit the application" +
+              Chat.ANSI_WHITE + " - quit");
             System.out.println("");
-            System.out.print(ANSI_BLUE + "Command: " + ANSI_WHITE);
+            System.out.print(Chat.ANSI_BLUE + "Command: " + Chat.ANSI_WHITE);
 
               //Get our current console input and add to our chat command
               String chatCommand = consoleInput.nextLine();
