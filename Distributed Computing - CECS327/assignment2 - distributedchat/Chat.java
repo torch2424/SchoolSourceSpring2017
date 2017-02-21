@@ -57,6 +57,12 @@ public static void debugLog(String log) {
     System.out.println(log);
   }
 }
+public static void handleException(Exception e) {
+  String exceptionString = e.toString().toLowerCase();
+  if(!exceptionString.contains("eof")) {
+    Chat.debugLog(e.toString());
+  }
+}
 
 //Localhost only
 @Parameter(names={"--localhost-only", "-lo"}, description="To force connections to only go through localhost")
@@ -64,6 +70,8 @@ public static boolean localhostOnly= false;
 
 //Our initial join
 public static boolean initialJoin;
+public static boolean waitingForAccept;
+
 //If we are currently disconnected
 public static boolean disconnected;
 //Chat command and messages
@@ -135,13 +143,12 @@ public static class ChatJson {
     return jsonString;
   }
 
-  public static String getJsonJoin(String myAlias, int myPort) {
+  public static String getJsonJoin(String myIp, int myPort) {
     /*
     {
          "type" :  "JOIN",
          "parameters" :
                 {
-                     "myAlias" : string,
                      "myIp": string,
                      "myPort"  : number
                 }
@@ -149,21 +156,7 @@ public static class ChatJson {
     */
     // Create the Json Objects, and add their prameters
     JSONObject paramObject = new JSONObject();
-    paramObject.put("myAlias", myAlias);
-    //Get the current ip of the device (client)
-    try {
-      if(Chat.localhostOnly) {
-        paramObject.put("myIp", "localhost");
-      } else {
-        //Get the host, and split by / to get ip
-        String fullHost = InetAddress.getLocalHost().toString();
-        String[] splitHost = fullHost.split("/");
-        paramObject.put("myIp", splitHost[1]);
-      }
-    } catch(Exception e) {
-      System.out.println("Could not get Ip Address: " + e);
-      System.exit(0);
-    }
+    paramObject.put("myIp", myIp);
     paramObject.put("myPort", myPort);
     JSONObject jsonObject = new JSONObject();
     jsonObject.put("type", "JOIN");
@@ -316,19 +309,48 @@ public void run() {
                        String requestType = requestObject.get("type").toString();
                        JSONObject requestParams = (JSONObject) parser.parse(requestObject.get("parameters").toString());
 
-                       if(requestType == "JOIN") {
+                       if(requestType.equals("JOIN")) {
+                         Chat.debugLog("Hello!!!");
                          //We Have a client wanting to join our chat
-                         //We need to grab myAlias, and myPort
-                         String newAlias = requestParams.get("myAlias").toString();
+                         //We need to grab myIp, and myPort
+                         String newIp = requestParams.get("myIp").toString();
                          int newPort = Integer.valueOf(requestParams.get("myPort").toString());
 
                          //If we have a predecessor, tell them they have a new Successor
                          if(Chat.ipPredecessor.length() > 0 &&
                             Chat.portPredecessor > -1) {
+                              //Create our socket
+                              Socket serverSocket = new Socket(ipSuccessor, portSuccessor);
+                              //Get our JSON streams
+                              ObjectOutputStream predOos = new ObjectOutputStream(serverSocket.getOutputStream());
 
+                              //Send a NEW SUCCESSOR to the predecessor
+                              String json = ChatJson.getJsonNewSuccessor(Chat.ipPredecessor, Chat.portPredecessor);
+                              predOos.writeObject(json);
+
+                              //Close the socket
+                              serverSocket.close();
                           }
 
-                         //Set the new client as our predecessor
+                          //Tell the new client we accept them
+                          //Also, check if we are connecting to ourselves
+                          if(newIp.equals(Chat.ipSuccessor) && newPort == Chat.portSuccessor) {
+                            Chat.waitingForAccept = false;
+                          } else {
+                            String json = ChatJson.getJsonAccept(newIp, newPort);
+                            Chat.debugLog(json);
+                          }
+
+                          //Set the new client as our predecessor
+                          Chat.ipPredecessor = newIp;
+                          Chat.portPredecessor = newPort;
+                       } else if (requestType.equals("ACCEPT")) {
+                         //Set our predecessor to the one passed by the json
+                         String predIp = requestParams.get("ipPred").toString();
+                         int predPort = Integer.valueOf(requestParams.get("portPred").toString());
+                         Chat.ipPredecessor = predIp;
+                         Chat.portPredecessor = predPort;
+                         Chat.waitingForAccept = false;
                        }
                     } catch(ParseException pe){
                       //Inform the client of a request error
@@ -337,16 +359,13 @@ public void run() {
                         Chat.ANSI_WHITE);
                     }
 
-                  //only if the message requires a response
-                  //oos.write(m);
-
                   //Close a client socket on every read/write
                   clntSock.close();
 
                   //Sleep for the next connection
                   Thread.sleep(100);
                   } catch(Exception e) {
-                    System.out.println(e);
+                    Chat.handleException(e);
                   }
                 }
         } catch (Exception e)
@@ -378,40 +397,53 @@ public void run()
     System.out.println("-------------------");
     System.out.println(ANSI_CYAN + "Joining " + ipSuccessor + ":" +  portSuccessor + ANSI_WHITE);
     System.out.println("-------------------");
-    // Reastablish connection with server continuosly
-    //Read the accept from the server
-    boolean waitingForAccept = true;
-    while(waitingForAccept) {
-      //Change local host to a passed ip (argv) to change the requested server
-      Socket serverSocket = new Socket(ipSuccessor, portSuccessor);
 
-      //Get our JSON streams
-      ObjectOutputStream oos = new ObjectOutputStream(serverSocket.getOutputStream());
-      ObjectInputStream ois = new ObjectInputStream(serverSocket.getInputStream());
+    //Prepare our waiting for accept
+    Chat.waitingForAccept = true;
 
-      //Send a Join to the server
-      String jsonJoin = ChatJson.getJsonJoin(alias, myPort);
-      oos.writeObject(jsonJoin);
+    //Create our socket
+    Socket serverSocket = new Socket(ipSuccessor, portSuccessor);
 
-      //String serverResponse = (String) ois.readObject();
-      //System.out.println("Both Get Message?");
+    //Get our JSON streams
+    ObjectOutputStream oos = new ObjectOutputStream(serverSocket.getOutputStream());
+    ObjectInputStream ois = new ObjectInputStream(serverSocket.getInputStream());
 
-      //TODO: Read the server response, and handle the accept
+    //Send a Join to the server
+    //Get the current ip of the device (client)
+    String jsonJoin = "";
+    try {
+      if(Chat.localhostOnly) {
+        jsonJoin = ChatJson.getJsonJoin("localhost", myPort);
+      } else {
+        //Get the host, and split by / to get ip
+        String fullHost = InetAddress.getLocalHost().toString();
+        String[] splitHost = fullHost.split("/");
+        jsonJoin = ChatJson.getJsonJoin(splitHost[1], myPort);
+      }
+    } catch(Exception e) {
+      System.out.println("Could not get Ip Address: " + e);
+      System.exit(0);
+    }
+    oos.writeObject(jsonJoin);
 
-      //Close the Server Socket
-      serverSocket.close();
+    //Close the Server Socket
+    serverSocket.close();
+
+    //Now Wait for the server to flip the accepted boolean
+    while(Chat.waitingForAccept) {
+      Thread.sleep(100);
     }
 
     //Finally start the UI, since we got accept
     Scanner consoleInput = new Scanner(System.in);
     boolean clientRunning = true;
-        while (clientRunning)
-        {
+        while (clientRunning) {
             //Build Our UI
             System.out.print(Chat.ANSI_CLS + Chat.ANSI_HOME);
             System.out.flush();
 
             //Print Messages, descending order
+            Chat.debugLog("Refreshed! Random number proof: " + (Math.random() * 50 + 1));
             System.out.println("-------------------");
             if(chatHistoryLength != 0) {
               System.out.println(Chat.ANSI_CYAN +
@@ -446,23 +478,27 @@ public void run()
               //Get our current console input and add to our chat command
               String chatCommand = consoleInput.nextLine();
 
+              if(chatCommand.length() <= 1) {
+                continue;
+              }
+
               // Reastablish connection with server continuosly
               //Change local host to a passed ip (argv) to change the requested server
-              Socket serverSocket = new Socket(ipSuccessor, portSuccessor);
+              serverSocket = new Socket(ipSuccessor, portSuccessor);
 
               //Get our JSON streams
-              ObjectOutputStream oos = new ObjectOutputStream(serverSocket.getOutputStream());
-              ObjectInputStream ois = new ObjectInputStream(serverSocket.getInputStream());
+              oos = new ObjectOutputStream(serverSocket.getOutputStream());
+              ois = new ObjectInputStream(serverSocket.getInputStream());
 
-              //Send a Join to the server
-              String jsonJoin = ChatJson.getJsonJoin(alias, myPort);
-              oos.writeObject(jsonJoin);
+              // TODO: Decode Strings into commands
+              //String jsonJoin = ChatJson.getJsonJoin(alias, myPort);
+              //oos.writeObject(jsonJoin);
 
               //Close the Server Socket
               serverSocket.close();
         }
       } catch(Exception e) {
-        System.out.println(e);
+        Chat.handleException(e);
       }
 }
 }
