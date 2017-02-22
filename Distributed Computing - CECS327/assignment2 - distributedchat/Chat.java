@@ -31,7 +31,7 @@ public static final String ANSI_CYAN = "\u001B[36m";
 // My info
 //Useing JCommander to parse cli input
 @Parameter(names={"--alias", "-a"}, description="Your chat username", required = true)
-public static String alias;
+public static String myAlias;
 @Parameter(names={"--port", "-p"}, description="Port to host your server on")
 public static int myPort=8080;
 public static String myIp = "";
@@ -255,15 +255,15 @@ public static class ChatJson {
          "type" :  "NEWSUCCESSOR",
          "parameters" :
          {
-             "ipSuccessor"    : string,
-             "portSuccessor"  : number
+             "ipSucc"    : string,
+             "portSucc"  : number
          }
     }
     */
     // Create the Json Objects, and add their prameters
     JSONObject paramObject = new JSONObject();
-    paramObject.put("ipSuccessor", ipNext);
-    paramObject.put("portSuccessor", portNext);
+    paramObject.put("ipSucc", ipNext);
+    paramObject.put("portSucc", portNext);
     JSONObject jsonObject = new JSONObject();
     jsonObject.put("type", "NEWSUCCESSOR");
     jsonObject.put("parameters", paramObject);
@@ -337,12 +337,12 @@ public void run()
               System.out.println(Chat.ANSI_CYAN + "Messages" + Chat.ANSI_WHITE);
             }
             System.out.println("-------------------");
-            int messagesToShow = Chat.chatMessages.size() - 1;
+            int messagesToShow = 0;
             if(chatHistoryLength != 0 && chatHistoryLength <= Chat.chatMessages.size() - 1) {
               messagesToShow = chatHistoryLength;
             }
-            for(int i = 0; i <= messagesToShow; i++) {
-              System.out.println(Chat.chatMessages.get(Chat.chatMessages.size() - 1 - i));
+            for(int i = messagesToShow; i <= Chat.chatMessages.size() - 1; i++) {
+              System.out.println(Chat.chatMessages.get(i));
             }
 
             //Print Current input
@@ -351,7 +351,7 @@ public void run()
             System.out.println(Chat.ANSI_CYAN + "Chat Cheat Sheet:" + Chat.ANSI_WHITE);
             System.out.println("-------------------");
             System.out.println(Chat.ANSI_GREEN + "My Alias" +
-              Chat.ANSI_WHITE + " - @" + Chat.alias);
+              Chat.ANSI_WHITE + " - @" + Chat.myAlias);
             System.out.println(Chat.ANSI_GREEN + "Send Message" +
               Chat.ANSI_WHITE + " - @[alias] [Message]");
             System.out.println(Chat.ANSI_GREEN + "Refesh Messages" +
@@ -384,7 +384,25 @@ public void run()
               oos = new ObjectOutputStream(serverSocket.getOutputStream());
               ois = new ObjectInputStream(serverSocket.getInputStream());
 
-              if(chatCommand.toLowerCase().equals("quit")) {
+              if(chatCommand.contains("@") && chatCommand.contains(" ")) {
+                //We are sending a message to a user
+                chatCommand = chatCommand.substring(1);
+                String[] commandSplit = chatCommand.split(" ", 2);
+
+                //Add to our message log
+                Chat.chatMessages.add("You: " + commandSplit[1]);
+
+                //Create our socket
+                Socket newSocket = new Socket(Chat.ipSuccessor, Chat.portSuccessor);
+                //Get our JSON streams
+                ObjectOutputStream newOos = new ObjectOutputStream(newSocket.getOutputStream());
+
+                String json = ChatJson.getJsonPut(Chat.myAlias, commandSplit[0], commandSplit[1]);
+                newOos.writeObject(json);
+                Chat.debugLog("Sent Leave: " + json);
+                newSocket.close();
+
+              } else if(chatCommand.toLowerCase().equals("quit")) {
 
                 //Send a leave to our successor
                 //Create our socket
@@ -456,8 +474,6 @@ public void run() {
           String jsonRequest = (String) ois.readObject();
 
           Chat.debugLog("Got Message! " + jsonRequest);
-          //Add to our message history
-          //Chat.chatMessages.add(jsonRequest);
 
           //Declare our response
           String jsonResponse = "";
@@ -514,6 +530,12 @@ public void run() {
                   Chat.ipPredecessor = newIp;
                   Chat.portPredecessor = newPort;
                   Chat.waitingForAccept = false;
+               } else if (requestType.equals("NEWSUCCESSOR")) {
+                 //Set our successor to the one passed by the json
+                 String succIp = requestParams.get("ipSucc").toString();
+                 int succPort = Integer.valueOf(requestParams.get("portSucc").toString());
+                 Chat.ipSuccessor = succIp;
+                 Chat.portSuccessor = succPort;
                } else if (requestType.equals("ACCEPT")) {
                  //Set our predecessor to the one passed by the json
                  String predIp = requestParams.get("ipPred").toString();
@@ -523,6 +545,31 @@ public void run() {
                    Chat.ipPredecessor = predIp;
                    Chat.portPredecessor = predPort;
                    Chat.waitingForAccept = false;
+                 }
+               } else if (requestType.equals("PUT")) {
+                 //Get our parameters
+                 String aliasSender = requestParams.get("aliasSender").toString();
+                 String aliasReceiver = requestParams.get("aliasReceiver").toString();
+                 String chatMessage = requestParams.get("message").toString();
+
+                 //Check if we sent this message, if the message is for us,
+                 // Or to pass it around the circle
+                 if(aliasSender.equals(Chat.myAlias)) {
+                   Chat.chatMessages.add("User not found: @" + aliasReceiver);
+                 } else if(aliasReceiver.equals(Chat.myAlias)) {
+                   Chat.chatMessages.add("@" + aliasSender + " says: " + chatMessage);
+                 } else {
+                   //Pass to the successor
+                   Socket serverSocket = new Socket(Chat.ipSuccessor, Chat.portSuccessor);
+                   //Get our JSON streams
+                   ObjectOutputStream newOos = new ObjectOutputStream(serverSocket.getOutputStream());
+                   //Send a message pass
+                   String json = ChatJson.getJsonPut(aliasSender, aliasReceiver, chatMessage);
+                   newOos.writeObject(json);
+                   Chat.debugLog("Passed a message: " + json);
+
+                   //Close the socket
+                   serverSocket.close();
                  }
                } else if (requestType.equals("LEAVE")) {
                  //Set our predecessor to the one passed by the json
@@ -545,6 +592,8 @@ public void run() {
                  //Finally set our predecessor to them
                  Chat.ipPredecessor = predIp;
                  Chat.portPredecessor = predPort;
+              } else {
+                //Ignore the message
               }
             } catch(ParseException pe){
               //Inform the client of a request error
