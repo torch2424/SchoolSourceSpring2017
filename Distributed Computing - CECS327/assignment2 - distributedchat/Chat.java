@@ -31,9 +31,10 @@ public static final String ANSI_CYAN = "\u001B[36m";
 // My info
 //Useing JCommander to parse cli input
 @Parameter(names={"--alias", "-a"}, description="Your chat username", required = true)
-public String alias;
+public static String alias;
 @Parameter(names={"--port", "-p"}, description="Port to host your server on")
-public int myPort=8080;
+public static int myPort=8080;
+public static String myIp = "";
 
 // Predecessor (Behind)
 public static String ipPredecessor = "";
@@ -68,12 +69,9 @@ public static void handleException(Exception e) {
 @Parameter(names={"--localhost-only", "-lo"}, description="To force connections to only go through localhost")
 public static boolean localhostOnly= false;
 
-//Our initial join
-public static boolean initialJoin;
+//Our static booleans for dictating joining
 public static boolean waitingForAccept;
 
-//If we are currently disconnected
-public static boolean disconnected;
 //Chat command and messages
 public static ArrayList<String> chatMessages;
 
@@ -102,9 +100,23 @@ public static void main(String[] args) {
  * \param port where the server will listen
  **********************************/
 public void startChat() {
-  //Initialize the app
-  Chat.initialJoin = false;
-  Chat.disconnected = true;
+  //Get our IP
+  if(Chat.localhostOnly) {
+    Chat.myIp = "localhost";
+  } else {
+    try {
+      //Get the host, and split by / to get ip
+      String fullHost = InetAddress.getLocalHost().toString();
+      String[] splitHost = fullHost.split("/");
+      Chat.myIp = splitHost[1];
+    } catch (Exception e) {
+      System.out.println("Could not obtain an IP address");
+      System.exit(0);
+    }
+  }
+
+  //Initialize joining
+  Chat.waitingForAccept = true;
 
   // Initialization of the peer
   Thread server = new Thread(new Server());
@@ -113,8 +125,8 @@ public void startChat() {
   client.start();
   try {
           //Default thread code, if the thread dies, join back into the main thread
-          client.join();
           server.join();
+          client.join();
   } catch (InterruptedException e)
   {
           // Handle Exception
@@ -143,7 +155,7 @@ public static class ChatJson {
     return jsonString;
   }
 
-  public static String getJsonJoin(String myIp, int myPort) {
+  public static String getJsonJoin(int myPort) {
     /*
     {
          "type" :  "JOIN",
@@ -156,7 +168,7 @@ public static class ChatJson {
     */
     // Create the Json Objects, and add their prameters
     JSONObject paramObject = new JSONObject();
-    paramObject.put("myIp", myIp);
+    paramObject.put("myIp", Chat.myIp);
     paramObject.put("myPort", myPort);
     JSONObject jsonObject = new JSONObject();
     jsonObject.put("type", "JOIN");
@@ -261,122 +273,6 @@ public static class ChatJson {
   }
 }
 
-
-
-/*****************************//**
- * \class Server class "chat.java"
- * \brief It implements the server
- **********************************/
-private class Server implements Runnable
-{
-  public Server()
-  {
-  }
-/*****************************//**
- * \brief It allows the system to interact with the participants.
- **********************************/
-public void run() {
-        try {
-                Chat.debugLog("Server, myPort: " + myPort);
-                ServerSocket servSock = new ServerSocket(myPort);
-                boolean serverRunning = true;
-                while (serverRunning)
-                {
-                  try {
-                  // Get client connections
-                  Socket clntSock = servSock.accept();
-                  //Create a new thread to handle the connection
-                  ObjectInputStream ois = new ObjectInputStream(clntSock.getInputStream());
-                  ObjectOutputStream oos = new ObjectOutputStream(clntSock.getOutputStream());
-                  //reads the message using JsonParser and handle the messages
-                  String jsonRequest = (String) ois.readObject();
-
-                  Chat.debugLog("Got Message! " + jsonRequest);
-                  Chat.chatMessages.add(jsonRequest);
-
-                  //Declare our response
-                  String jsonResponse = "";
-
-                  //Boolean for if we are sending requests to other servers,
-                  // And waiting for another response
-                  boolean waitingForResponse = false;
-
-                  //Declare our Json Parser
-                  JSONParser parser = new JSONParser();
-                  try {
-                        //Parse the json Object, based on our expected schema
-                       JSONObject requestObject = (JSONObject) parser.parse(jsonRequest);
-                       String requestType = requestObject.get("type").toString();
-                       JSONObject requestParams = (JSONObject) parser.parse(requestObject.get("parameters").toString());
-
-                       if(requestType.equals("JOIN")) {
-                         Chat.debugLog("Hello!!!");
-                         //We Have a client wanting to join our chat
-                         //We need to grab myIp, and myPort
-                         String newIp = requestParams.get("myIp").toString();
-                         int newPort = Integer.valueOf(requestParams.get("myPort").toString());
-
-                         //If we have a predecessor, tell them they have a new Successor
-                         if(Chat.ipPredecessor.length() > 0 &&
-                            Chat.portPredecessor > -1) {
-                              //Create our socket
-                              Socket serverSocket = new Socket(ipSuccessor, portSuccessor);
-                              //Get our JSON streams
-                              ObjectOutputStream predOos = new ObjectOutputStream(serverSocket.getOutputStream());
-
-                              //Send a NEW SUCCESSOR to the predecessor
-                              String json = ChatJson.getJsonNewSuccessor(Chat.ipPredecessor, Chat.portPredecessor);
-                              predOos.writeObject(json);
-
-                              //Close the socket
-                              serverSocket.close();
-                          }
-
-                          //Tell the new client we accept them
-                          //Also, check if we are connecting to ourselves
-                          if(newIp.equals(Chat.ipSuccessor) && newPort == Chat.portSuccessor) {
-                            Chat.waitingForAccept = false;
-                          } else {
-                            String json = ChatJson.getJsonAccept(newIp, newPort);
-                            Chat.debugLog(json);
-                          }
-
-                          //Set the new client as our predecessor
-                          Chat.ipPredecessor = newIp;
-                          Chat.portPredecessor = newPort;
-                       } else if (requestType.equals("ACCEPT")) {
-                         //Set our predecessor to the one passed by the json
-                         String predIp = requestParams.get("ipPred").toString();
-                         int predPort = Integer.valueOf(requestParams.get("portPred").toString());
-                         Chat.ipPredecessor = predIp;
-                         Chat.portPredecessor = predPort;
-                         Chat.waitingForAccept = false;
-                       }
-                    } catch(ParseException pe){
-                      //Inform the client of a request error
-                      Chat.chatMessages.add(Chat.ANSI_RED +
-                        "Invalid Server Request: " + jsonRequest +
-                        Chat.ANSI_WHITE);
-                    }
-
-                  //Close a client socket on every read/write
-                  clntSock.close();
-
-                  //Sleep for the next connection
-                  Thread.sleep(100);
-                  } catch(Exception e) {
-                    Chat.handleException(e);
-                  }
-                }
-        } catch (Exception e)
-        {
-                // Handle the exception
-        }
-}
-}
-
-
-
 /*****************************//*
  * \brief It implements the client
  **********************************/
@@ -398,9 +294,6 @@ public void run()
     System.out.println(ANSI_CYAN + "Joining " + ipSuccessor + ":" +  portSuccessor + ANSI_WHITE);
     System.out.println("-------------------");
 
-    //Prepare our waiting for accept
-    Chat.waitingForAccept = true;
-
     //Create our socket
     Socket serverSocket = new Socket(ipSuccessor, portSuccessor);
 
@@ -410,20 +303,7 @@ public void run()
 
     //Send a Join to the server
     //Get the current ip of the device (client)
-    String jsonJoin = "";
-    try {
-      if(Chat.localhostOnly) {
-        jsonJoin = ChatJson.getJsonJoin("localhost", myPort);
-      } else {
-        //Get the host, and split by / to get ip
-        String fullHost = InetAddress.getLocalHost().toString();
-        String[] splitHost = fullHost.split("/");
-        jsonJoin = ChatJson.getJsonJoin(splitHost[1], myPort);
-      }
-    } catch(Exception e) {
-      System.out.println("Could not get Ip Address: " + e);
-      System.exit(0);
-    }
+    String jsonJoin = ChatJson.getJsonJoin(Chat.myPort);
     oos.writeObject(jsonJoin);
 
     //Close the Server Socket
@@ -431,8 +311,12 @@ public void run()
 
     //Now Wait for the server to flip the accepted boolean
     while(Chat.waitingForAccept) {
-      Thread.sleep(100);
+      Thread.sleep(200);
     }
+
+    //Prepare for unrecognized commands
+    boolean shouldShowBadCommand = false;
+    String badCommand = "";
 
     //Finally start the UI, since we got accept
     Scanner consoleInput = new Scanner(System.in);
@@ -466,6 +350,8 @@ public void run()
             System.out.println("-------------------");
             System.out.println(Chat.ANSI_CYAN + "Chat Cheat Sheet:" + Chat.ANSI_WHITE);
             System.out.println("-------------------");
+            System.out.println(Chat.ANSI_GREEN + "My Alias" +
+              Chat.ANSI_WHITE + " - @" + Chat.alias);
             System.out.println(Chat.ANSI_GREEN + "Send Message" +
               Chat.ANSI_WHITE + " - @[alias] [Message]");
             System.out.println(Chat.ANSI_GREEN + "Refesh Messages" +
@@ -473,10 +359,18 @@ public void run()
             System.out.println(Chat.ANSI_GREEN + "Quit the application" +
               Chat.ANSI_WHITE + " - quit");
             System.out.println("");
+            if(shouldShowBadCommand) {
+              System.out.println(Chat.ANSI_RED + "Unrecognized Command: " +
+                Chat.ANSI_WHITE + badCommand);
+            }
+            System.out.println("");
             System.out.print(Chat.ANSI_BLUE + "Command: " + Chat.ANSI_WHITE);
 
               //Get our current console input and add to our chat command
               String chatCommand = consoleInput.nextLine();
+
+              //Reset our bad command
+              shouldShowBadCommand = false;
 
               if(chatCommand.length() <= 1) {
                 continue;
@@ -490,9 +384,30 @@ public void run()
               oos = new ObjectOutputStream(serverSocket.getOutputStream());
               ois = new ObjectInputStream(serverSocket.getInputStream());
 
-              // TODO: Decode Strings into commands
-              //String jsonJoin = ChatJson.getJsonJoin(alias, myPort);
-              //oos.writeObject(jsonJoin);
+              if(chatCommand.toLowerCase().equals("quit")) {
+
+                //Send a leave to our successor
+                //Create our socket
+                Socket newSocket = new Socket(Chat.ipSuccessor, Chat.portSuccessor);
+                //Get our JSON streams
+                ObjectOutputStream newOos = new ObjectOutputStream(newSocket.getOutputStream());
+
+                String json = ChatJson.getJsonLeave(Chat.ipPredecessor, Chat.portPredecessor);
+                newOos.writeObject(json);
+                Chat.debugLog("Sent Leave: " + json);
+                newSocket.close();
+
+                //Tell the client to leave
+                clientRunning = false;
+
+                //Tell the user goodbye
+                System.out.println("Goodbye! Thank you for using this chat application!");
+                System.exit(0);
+              } else {
+                //Show a bad command
+                shouldShowBadCommand = true;
+                badCommand = chatCommand;
+              }
 
               //Close the Server Socket
               serverSocket.close();
@@ -501,5 +416,152 @@ public void run()
         Chat.handleException(e);
       }
 }
+}
+
+/*****************************//**
+ * \class Server class "chat.java"
+ * \brief It implements the server
+ **********************************/
+private class Server implements Runnable
+{
+  public Server()
+  {
+  }
+/*****************************//**
+ * \brief It allows the system to interact with the participants.
+ **********************************/
+public void run() {
+
+        //Start the server socket
+        ServerSocket servSock = null;
+        try {
+          servSock = new ServerSocket(Chat.myPort);
+        } catch(Exception e) {
+          Chat.handleException(e);
+          System.exit(0);
+        }
+
+        //Debug the server
+        Chat.debugLog("Server, myPort: " + Chat.myPort);
+        boolean serverRunning = true;
+        while (serverRunning)
+        {
+          try {
+          // Get client connections
+          Socket clntSock = servSock.accept();
+          //Create a new thread to handle the connection
+          ObjectInputStream ois = new ObjectInputStream(clntSock.getInputStream());
+          ObjectOutputStream oos = new ObjectOutputStream(clntSock.getOutputStream());
+          //reads the message using JsonParser and handle the messages
+          String jsonRequest = (String) ois.readObject();
+
+          Chat.debugLog("Got Message! " + jsonRequest);
+          //Add to our message history
+          //Chat.chatMessages.add(jsonRequest);
+
+          //Declare our response
+          String jsonResponse = "";
+
+          //Boolean for if we are sending requests to other servers,
+          // And waiting for another response
+          boolean waitingForResponse = false;
+
+          //Declare our Json Parser
+          JSONParser parser = new JSONParser();
+          try {
+                //Parse the json Object, based on our expected schema
+               JSONObject requestObject = (JSONObject) parser.parse(jsonRequest);
+               String requestType = requestObject.get("type").toString();
+               JSONObject requestParams = (JSONObject) parser.parse(requestObject.get("parameters").toString());
+
+               if(requestType.equals("JOIN")) {
+                 //We Have a client wanting to join our chat
+                 //We need to grab myIp, and myPort
+                 String newIp = requestParams.get("myIp").toString();
+                 int newPort = Integer.valueOf(requestParams.get("myPort").toString());
+
+                 //If we have a predecessor, tell them they have a new Successor
+                 if(Chat.ipPredecessor.length() > 0 &&
+                    Chat.portPredecessor > -1) {
+                      //Create our socket
+                      Socket serverSocket = new Socket(ipSuccessor, portSuccessor);
+                      //Get our JSON streams
+                      ObjectOutputStream predOos = new ObjectOutputStream(serverSocket.getOutputStream());
+
+                      //Send a NEW SUCCESSOR to the predecessor
+                      String json = ChatJson.getJsonNewSuccessor(newIp, newPort);
+                      predOos.writeObject(json);
+                      Chat.debugLog("Sent new successor: " + json);
+
+                      //Close the socket
+                      serverSocket.close();
+                  }
+
+                  //Tell the new client we accept them
+                  //Create our socket
+                  Socket socket = new Socket(newIp, newPort);
+                  //Get our JSON streams
+                  ObjectOutputStream newOos = new ObjectOutputStream(socket.getOutputStream());
+
+                  String json = ChatJson.getJsonAccept(Chat.ipPredecessor, Chat.portPredecessor);
+                  newOos.writeObject(json);
+                  Chat.debugLog("Accepted client: " + json);
+
+                  //Close the socket
+                  socket.close();
+
+                  //Set the new client as our predecessor
+                  Chat.ipPredecessor = newIp;
+                  Chat.portPredecessor = newPort;
+                  Chat.waitingForAccept = false;
+               } else if (requestType.equals("ACCEPT")) {
+                 //Set our predecessor to the one passed by the json
+                 String predIp = requestParams.get("ipPred").toString();
+                 int predPort = Integer.valueOf(requestParams.get("portPred").toString());
+                 if(Chat.ipPredecessor.length() <= 0 &&
+                    Chat.portPredecessor <= -1) {
+                   Chat.ipPredecessor = predIp;
+                   Chat.portPredecessor = predPort;
+                   Chat.waitingForAccept = false;
+                 }
+               } else if (requestType.equals("LEAVE")) {
+                 //Set our predecessor to the one passed by the json
+                 String predIp = requestParams.get("ipPred").toString();
+                 int predPort = Integer.valueOf(requestParams.get("portPred").toString());
+
+                 //Send a new succssore the the passed pred
+                 Socket serverSocket = new Socket(predIp, predPort);
+                 //Get our JSON streams
+                 ObjectOutputStream predOos = new ObjectOutputStream(serverSocket.getOutputStream());
+
+                 //Send a NEW SUCCESSOR to the predecessor
+                 String json = ChatJson.getJsonNewSuccessor(Chat.myIp, Chat.myPort);
+                 predOos.writeObject(json);
+                 Chat.debugLog("Sent new successor: " + json);
+
+                 //Close the socket
+                 serverSocket.close();
+
+                 //Finally set our predecessor to them
+                 Chat.ipPredecessor = predIp;
+                 Chat.portPredecessor = predPort;
+              }
+            } catch(ParseException pe){
+              //Inform the client of a request error
+              Chat.chatMessages.add(Chat.ANSI_RED +
+                "Invalid Server Request: " + jsonRequest +
+                Chat.ANSI_WHITE);
+            }
+
+          //Close a client socket on every read/write
+          clntSock.close();
+
+          //Sleep for the next connection
+          Thread.sleep(100);
+          } catch(Exception e) {
+            Chat.handleException(e);
+          }
+        }
+      }
 }
 }
