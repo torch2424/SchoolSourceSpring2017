@@ -2,4 +2,7 @@
 
 Build with `javac -classpath json-simple-1.1.1.jar:jcommander.jar Chat.java`
 
-Run with `java -cp .:json-simple-1.1.1.jar:jcommander.jar Chat -a torch2424`
+Run with `java -cp .:json-simple-1.1.1.jar:jcommander.jar Chat`
+
+# Example Gif
+![Example Gif](https://files.aaronthedev.com/$/uj4za)
