@@ -314,6 +314,10 @@ public void run()
       Thread.sleep(200);
     }
 
+  } catch(Exception e) {
+    Chat.handleException(e);
+  }
+
     //Prepare for unrecognized commands
     boolean shouldShowBadCommand = false;
     String badCommand = "";
@@ -322,6 +326,7 @@ public void run()
     Scanner consoleInput = new Scanner(System.in);
     boolean clientRunning = true;
         while (clientRunning) {
+          try {
             //Build Our UI
             System.out.print(Chat.ANSI_CLS + Chat.ANSI_HOME);
             System.out.flush();
@@ -350,6 +355,14 @@ public void run()
             System.out.println("-------------------");
             System.out.println(Chat.ANSI_CYAN + "Chat Cheat Sheet:" + Chat.ANSI_WHITE);
             System.out.println("-------------------");
+            System.out.println(Chat.ANSI_GREEN + "My Host" +
+              Chat.ANSI_WHITE + " - " + Chat.myIp + ":" + Chat.myPort);
+            if(Chat.debugMode) {
+              System.out.println(Chat.ANSI_RED + "[DEBUG] My Successor" +
+                Chat.ANSI_WHITE + " - " + Chat.ipSuccessor + ":" + Chat.portSuccessor);
+                System.out.println(Chat.ANSI_RED + "[DEBUG] My Predecessor" +
+                  Chat.ANSI_WHITE + " - " + Chat.ipPredecessor + ":" + Chat.portPredecessor);
+            }
             System.out.println(Chat.ANSI_GREEN + "My Alias" +
               Chat.ANSI_WHITE + " - @" + Chat.myAlias);
             System.out.println(Chat.ANSI_GREEN + "Send Message" +
@@ -378,11 +391,11 @@ public void run()
 
               // Reastablish connection with server continuosly
               //Change local host to a passed ip (argv) to change the requested server
-              serverSocket = new Socket(ipSuccessor, portSuccessor);
+              Socket serverSocket = new Socket(ipSuccessor, portSuccessor);
 
               //Get our JSON streams
-              oos = new ObjectOutputStream(serverSocket.getOutputStream());
-              ois = new ObjectInputStream(serverSocket.getInputStream());
+              ObjectOutputStream oos = new ObjectOutputStream(serverSocket.getOutputStream());
+              ObjectInputStream ois = new ObjectInputStream(serverSocket.getInputStream());
 
               if(chatCommand.contains("@") && chatCommand.contains(" ")) {
                 //We are sending a message to a user
@@ -429,10 +442,10 @@ public void run()
 
               //Close the Server Socket
               serverSocket.close();
+          } catch(Exception e) {
+            Chat.handleException(e);
+          }
         }
-      } catch(Exception e) {
-        Chat.handleException(e);
-      }
 }
 }
 
@@ -500,7 +513,7 @@ public void run() {
                  if(Chat.ipPredecessor.length() > 0 &&
                     Chat.portPredecessor > -1) {
                       //Create our socket
-                      Socket serverSocket = new Socket(ipSuccessor, portSuccessor);
+                      Socket serverSocket = new Socket(ipPredecessor, portPredecessor);
                       //Get our JSON streams
                       ObjectOutputStream predOos = new ObjectOutputStream(serverSocket.getOutputStream());
 
