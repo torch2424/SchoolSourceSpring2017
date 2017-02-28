@@ -10,11 +10,13 @@ import org.json.simple.parser.*;
 //Cli Parsing
 import com.beust.jcommander.*;
 
-/*****************************//**
- * \brief It implements a distributed chat.
+ /**
+ * It implements a distributed chat.
  * It creates a ring and delivers messages
  * using flooding
- **********************************/
+ *
+ * @author Aaron Turner
+ */
 public class Chat {
 
 //Colors for our Terminal
@@ -53,11 +55,24 @@ public static int chatHistoryLength=0;
 //Debug logging
 @Parameter(names={"--debug", "-d"}, description="To Enable Debug logging")
 public static boolean debugMode = false;
+
+/**
+* Wrapper function around System.out.println, to show specific logs
+* in debugMode
+*
+* @param log - the string to log to the UI
+*/
 public static void debugLog(String log) {
   if(debugMode == true) {
     System.out.println(log);
   }
 }
+
+/**
+* Wrapper function to show errors dependent on the type of error we received
+*
+* @param e - The Exception that was thrown
+*/
 public static void handleException(Exception e) {
   String exceptionString = e.toString().toLowerCase();
   if(!exceptionString.contains("eof")) {
@@ -75,12 +90,19 @@ public static boolean waitingForAccept;
 //Chat command and messages
 public static ArrayList<String> chatMessages;
 
-//Chat Class Constructor
+/**
+* Constructor for the Chat Class
+*/
 public Chat() {
   chatMessages = new ArrayList<String>();
 }
 
-//Main Function run at start
+/**
+* main function ran at program start. This passes arges to jCommander
+* to parse and assign our passed parameters
+*
+* @param args - Array of passed arguments
+*/
 public static void main(String[] args) {
         //Set our debug mode
         Chat chat = new Chat();
@@ -94,11 +116,9 @@ public static void main(String[] args) {
         }
 }
 
-/*****************************//**
- * Starts the threads with the client and server:
- * \param Id unique identifier of the process
- * \param port where the server will listen
- **********************************/
+ /**
+ * Spins up threads for the client and server, and begins waiting for an accept
+ */
 public void startChat() {
   //Get our IP
   if(Chat.localhostOnly) {
@@ -134,11 +154,18 @@ public void startChat() {
   }
 }
 
-//Static class for our Json
-//Please see the getJsonJoin for documentation,
-//on how messages are constructed
+/**
+* Static class for our Json
+* Please see the getJsonJoin for documentation,
+* on how messages are constructed
+*/
 public static class ChatJson {
 
+  /**
+  * Function to Convert a jsonObject data type, to a string to be handled/sent
+  *
+  * @param jsonObject - json object we are converting
+  */
   private static String JsonObjectToString(JSONObject jsonObject) {
     String jsonString = "";
     try {
@@ -155,6 +182,12 @@ public static class ChatJson {
     return jsonString;
   }
 
+  /**
+  * Function to return a filled schema of the Join JSON request
+  *
+  * @param myPort - the port we are hosting our server on
+  * @return Json Object as a string to be sent in the ObjectOutputStream
+  */
   public static String getJsonJoin(int myPort) {
     /*
     {
@@ -178,6 +211,13 @@ public static class ChatJson {
     return ChatJson.JsonObjectToString(jsonObject);
   }
 
+  /**
+  * Function to return a filled schema of the Accept JSON request
+  *
+  * @param ipPrevious - the ip address of the predecessor
+  * @param portPrevious - the port of the predecessor
+  * @return Json Object as a string to be sent in the ObjectOutputStream
+  */
   public static String getJsonAccept(String ipPrevious, int portPrevious) {
     /*
     {
@@ -201,6 +241,13 @@ public static class ChatJson {
     return ChatJson.JsonObjectToString(jsonObject);
   }
 
+  /**
+  * Function to return a filled schema of the LEAVE JSON request
+  *
+  * @param ipPrevious - the ip address of the predecessor
+  * @param portPrevious - the port of the predecessor
+  * @return Json Object as a string to be sent in the ObjectOutputStream
+  */
   public static String getJsonLeave(String ipPrevious, int portPrevious) {
     /*
     {
@@ -224,6 +271,15 @@ public static class ChatJson {
     return ChatJson.JsonObjectToString(jsonObject);
   }
 
+  /**
+  * Function to return a filled schema of the PUT JSON request.
+  * Used for sending messages to another user
+  *
+  * @param aliasSender - the alias of the sender of the message
+  * @param aliasReceiver - the alias of the receiver for the message
+  * @param message - the message the receiver will view
+  * @return Json Object as a string to be sent in the ObjectOutputStream
+  */
   public static String getJsonPut(String aliasSender, String aliasReceiver, String message) {
     /*
     {
@@ -249,6 +305,13 @@ public static class ChatJson {
     return ChatJson.JsonObjectToString(jsonObject);
   }
 
+  /**
+  * Function to return a filled schema of the NEWSUCCESSOR JSON request
+  *
+  * @param ipNext - the ip address of the successor
+  * @param portNext - the port of the successor
+  * @return Json Object as a string to be sent in the ObjectOutputStream
+  */
   public static String getJsonNewSuccessor(String ipNext, int portNext) {
     /*
     {
@@ -273,18 +336,26 @@ public static class ChatJson {
   }
 }
 
-/*****************************//*
- * \brief It implements the client
- **********************************/
+/**
+* Class for implementing the Client. This will build the UI, and
+* Accept commands, and cycle through the chat messages
+*/
 private class Client implements Runnable
 {
 
+/**
+* Constructor for the client
+*/
 public Client()
 {
 }
-/*****************************//**
- * \brief It allows the user to interact with the system.
- **********************************/
+
+/**
+* Function ran at the inititalization of the client thread
+*
+* Intially will make the Join request, and wait for the ACCEPT.
+* This will infinitely loop to accept user input, and display the UI.
+*/
 public void run()
 {
 
@@ -449,18 +520,24 @@ public void run()
 }
 }
 
-/*****************************//**
- * \class Server class "chat.java"
- * \brief It implements the server
- **********************************/
+/**
+* Class for implementing the Server. This will listen for, and accept
+* Valid json requests sent to the server
+*/
 private class Server implements Runnable
 {
+  /**
+  * Constructor for the server
+  */
   public Server()
   {
   }
-/*****************************//**
- * \brief It allows the system to interact with the participants.
- **********************************/
+
+  /**
+  * Function ran at the inititalization of the server thread
+  *
+  * Will Simply handle the valid requests that it listens for.
+  */
 public void run() {
 
         //Start the server socket
