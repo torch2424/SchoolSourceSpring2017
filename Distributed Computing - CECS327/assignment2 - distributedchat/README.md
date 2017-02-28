@@ -4,6 +4,5 @@ Build with `javac -classpath json-simple-1.1.1.jar:jcommander.jar Chat.java`
 
 Run with `java -cp .:json-simple-1.1.1.jar:jcommander.jar Chat`
 
-# Example Gif (Quite Large .gif) (Ran in Debug Mode for Verbosity)
-
-<iframe src="https://files.aaronthedev.com/$/2ps75" width="1024" height="150"></iframe>
+# Example Video (Ran in Debug Mode for Verbosity)
+[![Youtube Embed](http://img.youtube.com/vi/rqaUPOjszV0/0.jpg)](http://www.youtube.com/watch?v=rqaUPOjszV0)
