@@ -9,7 +9,7 @@ import java.nio.file.*;
 public class ChordUser
 {
      int port;
-    
+
     private long md5(String objectName)
     {
         try
@@ -23,44 +23,48 @@ public class ChordUser
         catch(NoSuchAlgorithmException e)
         {
                 e.printStackTrace();
-                
+
         }
         return 0;
     }
-    
-    
+
+
      public ChordUser(int p) {
          port = p;
-        
+
          Timer timer1 = new Timer();
          timer1.scheduleAtFixedRate(new TimerTask() {
             @Override
              public void run() {
                  try {
                      long guid = md5("" + port);
-                     Chord    chord = new Chord(port, guid);
+                     Chord chord = new Chord(port, guid);
                      try{
                          Files.createDirectories(Paths.get(guid+"/repository"));
                      }
                      catch(IOException e)
                      {
                          e.printStackTrace();
-                         
+
                      }
-                     System.out.println("Usage: \n\tjoin <ip> <port>\n\twrite <file> (the file must be an integer stored in the working directory, i.e, ./"+guid+"/file");
-                     System.out.println("\tread <file>\n\tdelete <file>\n\tprint");
-        
-                     Scanner scan= new Scanner(System.in);
+                     //Moved usage to loop
+                     //System.out.println("Usage: \n\tjoin <ip> <port>\n\twrite <file> (the file must be an integer stored in the working directory, i.e, ./"+guid+"/file");
+                     //System.out.println("\tread <file>\n\tdelete <file>\n\tprint");
+
+                     Scanner scan = new Scanner(System.in);
                      String delims = "[ ]+";
                      String command = "";
                      while (true)
                      {
+                         //Print usage
+                         System.out.println("Usage: \n\tjoin <ip> <port>\n\twrite <file> (the file must be an integer stored in the working directory, i.e, ./"+guid+"/file");
+                         System.out.println("\tread <file>\n\tdelete <file>\n\tprint");
                          String text= scan.nextLine();
                          String[] tokens = text.split(delims);
                          if (tokens[0].equals("join") && tokens.length == 3) {
                              try {
                                  int portToConnect = Integer.parseInt(tokens[2]);
-                                 
+
                                  chord.joinRing(tokens[1], portToConnect);
                              } catch (IOException e) {
                                  e.printStackTrace();
@@ -80,6 +84,7 @@ public class ChordUser
                                  FileStream file = new FileStream(path);
                                  ChordMessageInterface peer = chord.locateSuccessor(guidObject);
                                  peer.put(guidObject, file); // put file into ring
+                                 System.out.println("Wrote file at: " + path);
                              } catch (IOException e) {
                                  e.printStackTrace();
                              }
@@ -94,6 +99,26 @@ public class ChordUser
                              // Now you can obtain the conted of the file in the chord using
                              // Call stream = peer.get(guidObject)
                              // Store the content of stream in the file that you create
+                             try {
+                                 String path;
+                                 String fileName = tokens[1];
+                                 long guidObject = md5(fileName);
+                                 ChordMessageInterface peer = chord.locateSuccessor(guidObject);
+                                 path = "./"+  guid +"/"+fileName; // path to file
+                                 InputStream stream = peer.get(guidObject);
+
+                                 // Write the stream to a file
+                                 //http://www.baeldung.com/convert-input-stream-to-a-file
+                                 byte[] buffer = new byte[stream.available()];
+                                 stream.read(buffer);
+
+                                 File readFile = new File("/var/tmp/" + fileName);
+                                 OutputStream outStream = new FileOutputStream(readFile);
+                                 outStream.write(buffer);
+                                 System.out.println("Read file at: " + path);
+                             } catch (IOException e) {
+                                 e.printStackTrace();
+                             }
                         }
                         if  (tokens[0].equals("delete") && tokens.length == 2) {
                             // Obtain the chord that is responsable for the file:
@@ -110,7 +135,7 @@ public class ChordUser
              }
          }, 1000, 1000);
     }
-    
+
     static public void main(String args[])
     {
         if (args.length < 1 ) {
@@ -123,5 +148,5 @@ public class ChordUser
            e.printStackTrace();
            System.exit(1);
         }
-     } 
+     }
 }
