@@ -54,6 +54,9 @@ public class ChordUser
                      Scanner scan = new Scanner(System.in);
                      String delims = "[ ]+";
                      String command = "";
+                     //Clear the screen before we show our output
+                     //using ANSI Codes to get clear screen effect
+                     System.out.println("\u001b[2J");
                      while (true)
                      {
                          //Print usage
@@ -61,6 +64,14 @@ public class ChordUser
                          System.out.println("\tread <file>\n\tdelete <file>\n\tprint");
                          String text= scan.nextLine();
                          String[] tokens = text.split(delims);
+
+                         //Clear the screen before we show our output
+                         //using ANSI Codes to get clear screen effect
+                         System.out.println("\u001b[2J");
+                         System.out.println("Command: ");
+                         System.out.println(text);
+                         System.out.println("Response: ");
+
                          if (tokens[0].equals("join") && tokens.length == 3) {
                              try {
                                  int portToConnect = Integer.parseInt(tokens[2]);
@@ -69,11 +80,12 @@ public class ChordUser
                              } catch (IOException e) {
                                  e.printStackTrace();
                              }
-                         }
-                         if (tokens[0].equals("print")) {
+                         } else if (tokens[0].equals("print")) {
                              chord.Print();
-                         }
-                         if  (tokens[0].equals("write") && tokens.length == 2) {
+                         } else if  (tokens[0].equals("write") && tokens.length == 2) {
+                             //Create a local
+                             //    "./"+  guid +"/"+fileName
+                             // where filename = tokens[1];
                              try {
                                  String path;
                                  String fileName = tokens[1];
@@ -88,43 +100,62 @@ public class ChordUser
                              } catch (IOException e) {
                                  e.printStackTrace();
                              }
-                         }
-                         if  (tokens[0].equals("read") && tokens.length == 2) {
-                             //TODO: Create a local
-                             //    "./"+  guid +"/"+fileName
-                             // where filename = tokens[1];
+                         } else if  (tokens[0].equals("read") && tokens.length == 2) {
                              // Obtain the chord that is responsable for the file:
-                              //  peer = chord.locateSuccessor(guidObject);
+                             //  peer = chord.locateSuccessor(guidObject);
                              // where guidObject = md5(fileName);
                              // Now you can obtain the conted of the file in the chord using
                              // Call stream = peer.get(guidObject)
                              // Store the content of stream in the file that you create
                              try {
-                                 String path;
                                  String fileName = tokens[1];
                                  long guidObject = md5(fileName);
                                  ChordMessageInterface peer = chord.locateSuccessor(guidObject);
-                                 path = "./"+  guid +"/"+fileName; // path to file
                                  InputStream stream = peer.get(guidObject);
+
+                                 //Check if we got null
+                                 if (stream == null) {
+                                   System.out.println("File not found: " + fileName);
+                                   continue;
+                                 }
 
                                  // Write the stream to a file
                                  //http://www.baeldung.com/convert-input-stream-to-a-file
                                  byte[] buffer = new byte[stream.available()];
                                  stream.read(buffer);
 
-                                 File readFile = new File("/var/tmp/" + fileName);
+                                 String tmpPath = "/var/tmp/" + fileName;
+                                 File readFile = new File(tmpPath);
                                  OutputStream outStream = new FileOutputStream(readFile);
                                  outStream.write(buffer);
-                                 System.out.println("Read file at: " + path);
+                                 System.out.println("Read file at: " + fileName);
+                                 // Also read the contents of the file
+                                 System.out.println("File Contents of " + fileName + ":");
+                                 Scanner input = new Scanner(readFile);
+                                 while (input.hasNextLine())
+                                 {
+                                   System.out.println(input.nextLine());
+                                 }
+                                 input.close();
                              } catch (IOException e) {
                                  e.printStackTrace();
                              }
-                        }
-                        if  (tokens[0].equals("delete") && tokens.length == 2) {
+                        } else if  (tokens[0].equals("delete") && tokens.length == 2) {
+                          try {
                             // Obtain the chord that is responsable for the file:
                             //  peer = chord.locateSuccessor(guidObject);
                             // where guidObject = md5(fileName)
                             // Call peer.delete(guidObject)
+                            String fileName = tokens[1];
+                            long guidObject = md5(fileName);
+                            ChordMessageInterface peer = chord.locateSuccessor(guidObject);
+                            peer.delete(guidObject);
+                            System.out.println("Delete File: " + fileName);
+                          } catch (IOException e) {
+                              e.printStackTrace();
+                          }
+                        } else {
+                          System.out.println("Command not recognized");
                         }
                      }
                  }

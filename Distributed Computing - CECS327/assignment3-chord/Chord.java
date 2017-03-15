@@ -62,14 +62,31 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
 
 
     public InputStream get(long guidObject) throws RemoteException {
-	       FileStream file = null;
-
-         //TODO get the file ./port/repository/guid
-        return file;
+      InputStream file = null;
+      try {
+         //get the file ./port/repository/guid
+         // I think the professor meant port == guid, by the above comment
+         String path = "./"+  guid + "/repository/" + guidObject; // path to file
+         file = new FileStream(path);
+      }
+      catch (IOException e) {
+          System.out.println(e);
+      }
+      return file;
     }
 
     public void delete(long guidObject) throws RemoteException {
-          //TODO delete the file ./port/repository/guid
+          File file = null;
+          try {
+             // delete the file ./port/repository/guid/
+             // I think the professor meant port == guid, by the above comment
+             String path = "./"+  guid + "/repository/" + guidObject; // path to file
+             file = new File(path);
+             file.delete();
+          }
+          catch (Exception e) {
+              System.out.println(e);
+          }
     }
 
     public long getId() throws RemoteException {
