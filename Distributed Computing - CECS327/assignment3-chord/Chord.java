@@ -187,13 +187,14 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
 
     public void fixFingers() {
 
-        long id= guid;
+        long id = guid;
         try {
             long nextId;
-            if (nextFinger == 0)
-                nextId = (this.getId() + (1 << nextFinger));
-            else
-                nextId = finger[nextFinger -1].getId();
+            if (nextFinger == 0 || finger[nextFinger -1] == null) {
+              nextId = (this.getId() + (1 << nextFinger));
+            } else {
+              nextId = finger[nextFinger -1].getId();
+            }
             finger[nextFinger] = locateSuccessor(nextId);
 
             if (finger[nextFinger].getId() == guid)
@@ -201,7 +202,7 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
             else
                 nextFinger = (nextFinger + 1) % M;
         }
-        catch(RemoteException | NullPointerException e){
+        catch(RemoteException | NullPointerException e) {
             finger[nextFinger] = null;
             e.printStackTrace();
         }
@@ -253,6 +254,7 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
     {
         int i;
         try {
+            System.out.println("Your ID (Current User): "+ guid);
             if (successor != null)
                 System.out.println("successor "+ successor.getId());
             if (predecessor != null)
@@ -271,5 +273,11 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
         catch(RemoteException e){
 	       System.out.println("Cannot retrive id");
         }
+    }
+
+    public void quitChord() {
+
+      //Transfer files to other chords
+      System.exit(1);
     }
 }

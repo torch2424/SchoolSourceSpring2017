@@ -9,30 +9,13 @@ import java.nio.file.*;
 public class ChordUser
 {
      int port;
-
-    private long md5(String objectName)
-    {
-        try
-        {
-            MessageDigest m = MessageDigest.getInstance("MD5");
-            m.reset();
-            m.update(objectName.getBytes());
-            BigInteger bigInt = new BigInteger(1,m.digest());
-            return Math.abs(bigInt.longValue());
-        }
-        catch(NoSuchAlgorithmException e)
-        {
-                e.printStackTrace();
-
-        }
-        return 0;
-    }
-
+     Timer timer1;
 
      public ChordUser(int p) {
          port = p;
 
-         Timer timer1 = new Timer();
+         timer1 = new Timer();
+
          timer1.scheduleAtFixedRate(new TimerTask() {
             @Override
              public void run() {
@@ -60,8 +43,8 @@ public class ChordUser
                      while (true)
                      {
                          //Print usage
-                         System.out.println("Usage: \n\tjoin <ip> <port>\n\twrite <file> (the file must be an integer stored in the working directory, i.e, ./"+guid+"/file");
-                         System.out.println("\tread <file>\n\tdelete <file>\n\tprint");
+                         System.out.println("Aaron Turner, CECS 327, Chord Filesystem\nUsage: \n\tjoin <ip> <port>\n\twrite <file> (the file must be an integer stored in the working directory, i.e, ./"+guid+"/file");
+                         System.out.println("\tread <file>\n\tdelete <file>\n\tprint\n\tleave");
                          String text= scan.nextLine();
                          String[] tokens = text.split(delims);
 
@@ -81,7 +64,13 @@ public class ChordUser
                                  e.printStackTrace();
                              }
                          } else if (tokens[0].equals("print")) {
+                             // First, print the port
+                             System.out.println("Your Port (Current User): " + port);
                              chord.Print();
+                         } else if (tokens[0].equals("leave")) {
+                            //Call exit, which will hook to quitChord()
+                            chord.quitChord();
+                            quitChord(false);
                          } else if  (tokens[0].equals("write") && tokens.length == 2) {
                              //Create a local
                              //    "./"+  guid +"/"+fileName
@@ -167,13 +156,47 @@ public class ChordUser
          }, 1000, 1000);
     }
 
+    private long md5(String objectName)
+    {
+        try
+        {
+            MessageDigest m = MessageDigest.getInstance("MD5");
+            m.reset();
+            m.update(objectName.getBytes());
+            BigInteger bigInt = new BigInteger(1,m.digest());
+            return Math.abs(bigInt.longValue());
+        }
+        catch(NoSuchAlgorithmException e)
+        {
+                e.printStackTrace();
+
+        }
+        return 0;
+    }
+
+    public void quitChord(boolean showGoodbye) {
+      //Print our goodbyes and exit
+      if(showGoodbye) System.out.println("Thank you for using the Chord. Good bye!");
+      System.exit(1);
+    }
+
     static public void main(String args[])
     {
         if (args.length < 1 ) {
             throw new IllegalArgumentException("Parameter: <port>");
         }
-        try{
-            ChordUser chordUser=new ChordUser( Integer.parseInt(args[0]));
+
+        try {
+            //Create our chord user
+            final ChordUser chordUser = new ChordUser(Integer.parseInt(args[0]));
+
+            //Catch CTRL+C Events
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+              public void run() {
+                //Quit the chord user
+                chordUser.quitChord(true);
+              }
+           });
         }
         catch (Exception e) {
            e.printStackTrace();
