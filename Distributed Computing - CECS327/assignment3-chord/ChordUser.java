@@ -9,19 +9,19 @@ import java.nio.file.*;
 public class ChordUser
 {
      int port;
-     Timer timer1;
+     Chord chord;
 
      public ChordUser(int p) {
          port = p;
 
-         timer1 = new Timer();
+         Timer timer1 = new Timer();
 
          timer1.scheduleAtFixedRate(new TimerTask() {
             @Override
              public void run() {
                  try {
                      long guid = md5("" + port);
-                     Chord chord = new Chord(port, guid);
+                     chord = new Chord(port, guid);
                      try{
                          Files.createDirectories(Paths.get(guid+"/repository"));
                      }
@@ -64,13 +64,16 @@ public class ChordUser
                                  e.printStackTrace();
                              }
                          } else if (tokens[0].equals("print")) {
-                             // First, print the port
-                             System.out.println("Your Port (Current User): " + port);
                              chord.Print();
                          } else if (tokens[0].equals("leave")) {
-                            //Call exit, which will hook to quitChord()
-                            chord.quitChord();
-                            quitChord(false);
+
+                            //Cancel our UI timer
+                            timer1.cancel();
+                            timer1.purge();
+
+                            //quit the UI, goodbyes will be caught by our shutdown
+                            System.exit(1);
+                            return;
                          } else if  (tokens[0].equals("write") && tokens.length == 2) {
                              //Create a local
                              //    "./"+  guid +"/"+fileName
@@ -174,10 +177,9 @@ public class ChordUser
         return 0;
     }
 
-    public void quitChord(boolean showGoodbye) {
-      //Print our goodbyes and exit
-      if(showGoodbye) System.out.println("Thank you for using the Chord. Good bye!");
-      System.exit(1);
+    public void quitChord() {
+      chord.quitChord();
+      System.out.println("Thank you for using the Chord. Good bye!");
     }
 
     static public void main(String args[])
@@ -194,7 +196,7 @@ public class ChordUser
             Runtime.getRuntime().addShutdownHook(new Thread() {
               public void run() {
                 //Quit the chord user
-                chordUser.quitChord(true);
+                chordUser.quitChord();
               }
            });
         }

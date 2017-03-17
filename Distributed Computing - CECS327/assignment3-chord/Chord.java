@@ -276,8 +276,6 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
     }
 
     public void quitChord() {
-
-      //Transfer files to other chords
-      System.exit(1);
+      //Transfer files to other chords if needed
     }
 }
