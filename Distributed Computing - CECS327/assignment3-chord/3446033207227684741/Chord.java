@@ -129,10 +129,6 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
             ChordMessageInterface chord = (ChordMessageInterface)(registry.lookup("Chord"));
             predecessor = null;
             successor = chord.locateSuccessor(this.getId());
-
-            //Notify your successor of your files
-            notify(successor);
-
             System.out.println("Joining ring");
         }
         catch(RemoteException | NotBoundException e){
@@ -198,10 +194,6 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
           highId = j.getId();
         }
 
-        System.out.println("Interval for files to send");
-        System.out.println("high: " + highId);
-        System.out.println("low: " + lowId);
-
         //Get all of our files within our repo
         File folder = null;
         try {
@@ -217,8 +209,6 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
                //Send (Put) the file to the other user
                FileStream file = new FileStream(path + "/" + listOfFiles[i].getName());
                j.put(fileId, file);
-               // Now delete our file
-               listOfFiles[i].delete();
              }
            }
         }
@@ -322,9 +312,7 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
       //Transfer files to other chords if needed
       //Transfer files to the predecessor
       try {
-        if (successor != null && successor.getId() != guid) {
-          notify(successor);
-        }
+        notify(predecessor);
       } catch(RemoteException e) {
        System.out.println("Could not send reamining files to predecessor");
       }

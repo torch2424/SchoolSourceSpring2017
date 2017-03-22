@@ -44,7 +44,7 @@ public class ChordUser
                      {
                          //Print usage
                          System.out.println("Aaron Turner, CECS 327, Chord Filesystem\nUsage: \n\tjoin <ip> <port>\n\twrite <file> (the file must be an integer stored in the working directory, i.e, ./"+guid+"/file");
-                         System.out.println("\tread <file>\n\tdelete <file>\n\tprint\n\tleave");
+                         System.out.println("\tread <file>\n\tdelete <file>\n\tprint\n\tlist\n\tleave");
                          String text= scan.nextLine();
                          String[] tokens = text.split(delims);
 
@@ -65,6 +65,37 @@ public class ChordUser
                              }
                          } else if (tokens[0].equals("print")) {
                              chord.Print();
+                         } else if (tokens[0].equals("list")) {
+                           //Get all of our files within our repo
+                           File folder = null;
+                           try {
+                               System.out.println("Files in ID folder:");
+                               String path = "./" +  chord.getId() + "/"; // path to folder
+                               folder = new File(path);
+                               File[] listOfFiles = folder.listFiles();
+                               if(listOfFiles.length < 1) {
+                                 System.out.println("No files in folder...");
+                               } else {
+                                 for (int i = 0; i < listOfFiles.length; i++) {
+                                   if (listOfFiles[i].isFile()) {
+                                      System.out.println(listOfFiles[i].getName());
+                                    } else if (listOfFiles[i].isDirectory()) {
+                                      System.out.println(listOfFiles[i].getName() + "/");
+
+                                      //Loop through and print the directory
+                                      File[] listOfFilesSubFolder = listOfFiles[i].listFiles();
+                                      for(int k = 0; k < listOfFilesSubFolder.length; k++) {
+                                        System.out.println("\t" + listOfFilesSubFolder[k].getName());
+                                      }
+                                    }
+                                 }
+                               }
+
+                               //A final line for spacing
+                               System.out.println();
+                           } catch (IOException e) {
+                               e.printStackTrace();
+                           }
                          } else if (tokens[0].equals("leave")) {
 
                             //Cancel our UI timer
@@ -88,7 +119,7 @@ public class ChordUser
                                  FileStream file = new FileStream(path);
                                  ChordMessageInterface peer = chord.locateSuccessor(guidObject);
                                  peer.put(guidObject, file); // put file into ring
-                                 System.out.println("Wrote file at: " + path);
+                                 System.out.println("Wrote file to successor ID: " + peer.getId());
                              } catch (IOException e) {
                                  e.printStackTrace();
                              }
