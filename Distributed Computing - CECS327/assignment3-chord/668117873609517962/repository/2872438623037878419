@@ -118,7 +118,7 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
     }
 
     public ChordMessageInterface closestPrecedingNode(long key) throws RemoteException {
-      // TODO?
+        //TODO
         return successor;
     }
 
@@ -129,10 +129,6 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
             ChordMessageInterface chord = (ChordMessageInterface)(registry.lookup("Chord"));
             predecessor = null;
             successor = chord.locateSuccessor(this.getId());
-
-            //Notify your successor of your files
-            notify(successor, false);
-
             System.out.println("Joining ring");
         }
         catch(RemoteException | NotBoundException e){
@@ -172,7 +168,7 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
               }
               if (successor.getId() != getId())
               {
-                  successor.notify(this, false);
+                  successor.notify(this);
               }
           }
       } catch(RemoteException | NullPointerException e1) {
@@ -181,11 +177,22 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
       }
     }
 
-    public void notify(ChordMessageInterface j, boolean isForLeaving) throws RemoteException {
+    public void notify(ChordMessageInterface j) throws RemoteException {
         //Transfer keys in the range [j (other user guid),i (our own guid)) to j;
          if (predecessor == null || (predecessor != null
                     && isKeyInOpenInterval(j.getId(), predecessor.getId(), guid)))
              predecessor = j;
+
+        //Get our highest and lowest is hash from ours, and j
+        long highId = 0;
+        long lowId = 0;
+        if (guid > j.getId()) {
+          highId = guid;
+          lowId = j.getId();
+        } else {
+          lowId = guid;
+          highId = j.getId();
+        }
 
         //Get all of our files within our repo
         File folder = null;
@@ -198,16 +205,10 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
            for (int i = 0; i < listOfFiles.length; i++) {
              // Check if the object id is between our id and the j id
              long fileId = Long.valueOf(listOfFiles[i].getName());
-             // If the key is in the interval,
-             // or if the sender is leaving, and we need to send all of our files while we can
-             if(isKeyInOpenInterval(fileId, guid, j.getId()) ||
-              isForLeaving) {
-                System.out.println("Sending file!: " + fileId);
+             if(fileId > lowId && fileId < highId) {
                //Send (Put) the file to the other user
                FileStream file = new FileStream(path + "/" + listOfFiles[i].getName());
                j.put(fileId, file);
-               // Now delete our file
-               listOfFiles[i].delete();
              }
            }
         }
@@ -311,10 +312,7 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
       //Transfer files to other chords if needed
       //Transfer files to the predecessor
       try {
-        if (successor != null && successor.getId() != guid) {
-          System.out.println("Notifying successor");
-          notify(successor, true);
-        }
+        notify(predecessor);
       } catch(RemoteException e) {
        System.out.println("Could not send reamining files to predecessor");
       }
