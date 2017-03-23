@@ -218,8 +218,6 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
      *          the ip of a chord within the ring
      * @param port
      *          the  of a chord within the ring
-     *
-     * @return our Chord's successor
      */
     public void joinRing(String ip, int port)  throws RemoteException {
         try{
@@ -297,8 +295,6 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
      *          the other chord we would like to send to
      * @param isForLeaving
      *          If the reason for sending the files us because we are disconnecting
-     *
-     * @return our Chord's successor
      */
     public void notify(ChordMessageInterface j, boolean isForLeaving) throws RemoteException {
         //Transfer keys in the range [j (other user guid),i (our own guid)) to j;
