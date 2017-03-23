@@ -6,11 +6,23 @@ import java.math.BigInteger;
 import java.security.*;
 import java.nio.file.*;
 
+/**
+ * The class Chord User defines the CLI for using the Chord.
+ * It allows users to input commands, and performs actions on the Chord
+ * Running in the background of the application
+ * @author Aaron turner
+ */
 public class ChordUser
 {
      int port;
      Chord chord;
 
+     /**
+      * Constructor for our chord CLI
+      *
+      * @param p
+      *          the port of the host of the other chord
+      */
      public ChordUser(int p) {
          port = p;
 
@@ -190,6 +202,12 @@ public class ChordUser
          }, 1000, 1000);
     }
 
+    /**
+     * function used to hash a string into a usable guid (md5 hash)
+     *
+     * @param objectName
+     *          the string we are hashing through MD5
+     */
     private long md5(String objectName)
     {
         try
@@ -208,11 +226,20 @@ public class ChordUser
         return 0;
     }
 
+    /**
+     * Function called before killing the application
+     */
     public void quitChord() {
       chord.quitChord();
       System.out.println("Thank you for using the Chord. Good bye!");
     }
 
+    /**
+     * Function called at the beginning of every Java application
+     *
+     * @param args
+     *            the command line arguments that were sent when the application launched
+     */
     static public void main(String args[])
     {
         if (args.length < 1 ) {

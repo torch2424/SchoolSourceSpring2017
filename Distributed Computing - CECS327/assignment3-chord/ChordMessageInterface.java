@@ -1,6 +1,13 @@
 import java.rmi.*;
 import java.io.*;
 
+/**
+ * The Interface Chord is the server-side implementation fo the Chord.
+ * Communicates with other servers.
+ * Please see documentation on the Chord Class to see function documentation
+ * of this interface
+ * @author Aaron turner
+ */
 public interface ChordMessageInterface extends Remote
 {
     public ChordMessageInterface getPredecessor()  throws RemoteException;
