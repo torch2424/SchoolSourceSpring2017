@@ -28,6 +28,7 @@ public class ChordUser
 
          Timer timer1 = new Timer();
          // TODO: Hashmap of the read times
+         HashMap readTimes = new HashMap();
 
          timer1.scheduleAtFixedRate(new TimerTask() {
             @Override
@@ -126,6 +127,7 @@ public class ChordUser
                                  String path;
                                  String fileName = tokens[1];
                                  for(int i = 1; i <= 3; ++i) {
+                                   // TODO: mod by 65535 to get it to go to other ports
                                    long guidObject = md5(fileName + i);
                                    // If you are using windows you have to use
                                    // 				path = ".\\"+  guid +"\\"+fileName; // path to file
@@ -163,8 +165,14 @@ public class ChordUser
                                  byte[] buffer = new byte[stream.available()];
                                  stream.read(buffer);
 
-                                 String tmpPath = "/var/tmp/" + fileName;
-                                 File readFile = new File(tmpPath);
+                                 // Save the file in our current directory
+                                 String clientPath = "./" +  chord.getId() + "/" + fileName;
+                                 File readFile = new File(clientPath);
+                                 // Delete the file, and re-create it if it already exists
+                                 if(readFile.exists()) {
+                                   readFile.delete();
+                                   readFile.createNewFile();
+                                 }
                                  OutputStream outStream = new FileOutputStream(readFile);
                                  outStream.write(buffer);
                                  System.out.println("Read file at: " + fileName);

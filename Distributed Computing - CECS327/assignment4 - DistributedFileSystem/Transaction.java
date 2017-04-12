@@ -1,9 +1,11 @@
+import java.io.*;
+
 /**
   * Class for performing transactions with our atomic commit interface
   * This contains enums for voting, and describing actions
   * @author Aaron Turner
   */
-public class Transaction implements Serializeable {
+public class Transaction implements Serializable {
   public enum Operation {
     WRITE, DELETE
   }
