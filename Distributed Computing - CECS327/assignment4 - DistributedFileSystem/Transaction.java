@@ -19,4 +19,19 @@ public class Transaction implements Serializable {
 
   VOTE vote;
   FileStream fileStream;
+
+  // Our constructor
+  public Transaction(passedGuid, passedFileStream, passedId) {
+    guid = passedGuid;
+    fileStream = passedFileStream;
+    TransactionId = passedId
+  }
+
+  public void voteYes() {
+    vote = VOTE.YES;
+  }
+
+  public void voteNo() {
+    vote = VOTE.NO;
+  }
 }

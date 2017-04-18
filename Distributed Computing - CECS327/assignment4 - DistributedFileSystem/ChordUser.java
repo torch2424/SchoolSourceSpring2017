@@ -27,7 +27,7 @@ public class ChordUser
          port = p;
 
          Timer timer1 = new Timer();
-         // TODO: Hashmap of the read times
+         // Hashmap of the read times
          HashMap readTimes = new HashMap();
 
          timer1.scheduleAtFixedRate(new TimerTask() {
@@ -134,6 +134,7 @@ public class ChordUser
                                    path = "./"+  guid +"/"+fileName; // path to file
                                    FileStream file = new FileStream(path);
                                    ChordMessageInterface peer = chord.locateSuccessor(guidObject);
+                                   // TODO: Ask the peer if we can commit, and pass it a new transaction object
                                    peer.put(guidObject, file); // put file into ring
                                    System.out.println("Wrote file to successor ID: " + peer.getId());
                                  }

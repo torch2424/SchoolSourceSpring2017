@@ -11,7 +11,7 @@ import java.io.*;
  * Communicates with other servers
  * @author Aaron turner
  */
-public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordMessageInterface
+public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordMessageInterface, AtomicCommitInterface
 {
     public static final int M = 2;
 
@@ -23,7 +23,8 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
     int nextFinger;
     long guid;   		// GUID (i)
 
-    // TODO: HashMap for the write times of a guid
+    // Hashmap of the read times
+    HashMap writeTimes = new HashMap();
 
     /**
      * Find another chord at the host
@@ -438,6 +439,14 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
         catch(RemoteException e){
 	       System.out.println("Cannot retrive id");
         }
+    }
+
+    /**
+     * Function to ask the chord if we can commit a file
+     */
+    public boolean canCommit(Transaction transaction) {
+      // A client has asked us if we can commit
+
     }
 
     /**
