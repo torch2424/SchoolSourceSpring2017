@@ -17,6 +17,9 @@ public class ChordUser
      int port;
      Chord chord;
 
+     // Hashmap of the read times
+     HashMap<Long, Long> readTimes = new HashMap<Long, Long>();
+
      /**
       * Constructor for our chord CLI
       *
@@ -135,8 +138,10 @@ public class ChordUser
                                    FileStream file = new FileStream(path);
                                    ChordMessageInterface peer = chord.locateSuccessor(guidObject);
                                    // TODO: Ask the peer if we can commit, and pass it a new transaction object
-                                   peer.put(guidObject, file); // put file into ring
-                                   System.out.println("Wrote file to successor ID: " + peer.getId());
+                                   if(peer.canCommit(new Transaction(guidObject, file, (int)(Math.random() * 10000 + 1)), (Long) readTimes.get(guidObject))) {
+                                     peer.put(guidObject, file); // put file into ring
+                                     System.out.println("Wrote file to successor ID: " + peer.getId());
+                                   }
                                  }
                              } catch (IOException e) {
                                  e.printStackTrace();
@@ -185,6 +190,11 @@ public class ChordUser
                                    System.out.println(input.nextLine());
                                  }
                                  input.close();
+
+                                 // Finally, add to our read times
+                                 for(int i = 1; i < 4; i++) {
+                                   readTimes.put(md5(fileName + i), System.currentTimeMillis());
+                                 }
                              } catch (IOException e) {
                                  e.printStackTrace();
                              }

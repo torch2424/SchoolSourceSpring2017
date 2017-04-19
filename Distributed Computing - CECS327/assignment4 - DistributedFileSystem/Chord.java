@@ -5,13 +5,14 @@ import java.rmi.server.*;
 import java.net.*;
 import java.util.*;
 import java.io.*;
+import java.lang.*;
 
 /**
  * The Class Chord is the server-side implementation fo the Chord.
  * Communicates with other servers
  * @author Aaron turner
  */
-public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordMessageInterface, AtomicCommitInterface
+public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordMessageInterface
 {
     public static final int M = 2;
 
@@ -23,8 +24,8 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
     int nextFinger;
     long guid;   		// GUID (i)
 
-    // Hashmap of the read times
-    HashMap writeTimes = new HashMap();
+    // Hashmap of the write times
+    HashMap<Long, Long> writeTimes = new HashMap<Long, Long>();
 
     /**
      * Find another chord at the host
@@ -101,6 +102,9 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
           while (stream.available() > 0)
               output.write(stream.read());
           output.close();
+
+          // Finally add to our read times
+          writeTimes.put(guidObject, System.currentTimeMillis());
       }
       catch (IOException e) {
           System.out.println(e);
@@ -444,10 +448,35 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
     /**
      * Function to ask the chord if we can commit a file
      */
-    public boolean canCommit(Transaction transaction) {
+    public boolean canCommit(Transaction transaction, Long readTime) {
       // A client has asked us if we can commit
+      System.out.println("ayyyeee lmao");
+      // Check our write time
+      Long writeTime = (Long) writeTimes.get(transaction.getFileId());
+      // If write time is null, vote yes
+      if(writeTime == null) {
+        return true;
+      } else if(readTime != null &&
+      readTime >= writeTime) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    public void doCommit(Transaction transaction) throws IOException, RemoteException{
 
     }
+    public void doAbort(Transaction transaction) throws RemoteException {
+
+    }
+    public boolean haveCommited(Transaction transaction, long guid) throws RemoteException {
+      return true;
+    }
+    public boolean getDecisions(Transaction transaction) throws RemoteException {
+      return true;
+    }
+
 
     /**
      * Function called before closing the chord server. Will send

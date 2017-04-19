@@ -15,16 +15,16 @@ public class Transaction implements Serializable {
   }
 
   int TransactionId;
-  int guid;
+  long guid;
 
   VOTE vote;
   FileStream fileStream;
 
   // Our constructor
-  public Transaction(passedGuid, passedFileStream, passedId) {
+  public Transaction(long passedGuid, FileStream passedFileStream, int passedId) {
     guid = passedGuid;
     fileStream = passedFileStream;
-    TransactionId = passedId
+    TransactionId = passedId;
   }
 
   public void voteYes() {
@@ -33,5 +33,9 @@ public class Transaction implements Serializable {
 
   public void voteNo() {
     vote = VOTE.NO;
+  }
+
+  public long getFileId() {
+    return guid;
   }
 }

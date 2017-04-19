@@ -8,7 +8,7 @@ import java.io.*;
  * of this interface
  * @author Aaron turner
  */
-public interface ChordMessageInterface extends Remote
+public interface ChordMessageInterface extends Remote, AtomicCommitInterface
 {
     public ChordMessageInterface getPredecessor()  throws RemoteException;
     ChordMessageInterface locateSuccessor(long key) throws RemoteException;
