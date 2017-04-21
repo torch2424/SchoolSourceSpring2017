@@ -5,7 +5,7 @@ Within directory:
 
 # How to run
 
-`java ChordUser 8000`, 8000 is the port number, and can be whatever you like
+`java ChordUser`
 
 # Javadocs
 

@@ -448,32 +448,57 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
     /**
      * Function to ask the chord if we can commit a file
      */
-    public boolean canCommit(Transaction transaction, Long readTime) {
+    public Transaction canCommit(Transaction transaction, Long readTime) {
       // A client has asked us if we can commit
-      System.out.println("ayyyeee lmao");
       // Check our write time
       Long writeTime = (Long) writeTimes.get(transaction.getFileId());
       // If write time is null, vote yes
-      if(writeTime == null) {
-        return true;
-      } else if(readTime != null &&
-      readTime >= writeTime) {
-        return true;
+      if(writeTime != null &&
+        readTime != null &&
+        readTime < writeTime) {
+          transaction.voteNo();
       } else {
-        return false;
+        transaction.voteYes();
+        try {
+          //Save the transaction in a temp directory
+          String transactionPath = "/var/tmp/" + transaction.transactionId;
+          File transactionFile = new File(transactionPath);
+          OutputStream outStream = new FileOutputStream(transactionFile);
+          ObjectOutputStream transactionStream = new ObjectOutputStream(outStream);
+          transactionStream.writeObject(transaction);
+        } catch(Exception e) {
+          e.printStackTrace();
+        }
       }
+
+      // Return the transaction with the vote
+      return transaction;
     }
 
     public void doCommit(Transaction transaction) throws IOException, RemoteException{
-
+      // Do the commit
+      put(transaction.getFileId(), transaction.getStream());
+      // Update the write time
+      writeTimes.put(transaction.getFileId(), System.currentTimeMillis());
     }
+
     public void doAbort(Transaction transaction) throws RemoteException {
 
     }
-    public boolean haveCommited(Transaction transaction, long guid) throws RemoteException {
+
+    public boolean haveCommited(Transaction transaction, Long readTime) throws RemoteException {
+      // Check our write time
+      Long writeTime = (Long) writeTimes.get(transaction.getFileId());
+      if(writeTime != null &&
+        readTime != null &&
+        readTime >= writeTime) {
+          return false;
+      }
+      // Default to true
       return true;
     }
-    public boolean getDecisions(Transaction transaction) throws RemoteException {
+
+    public boolean getDecision(Transaction transaction) throws RemoteException {
       return true;
     }
 

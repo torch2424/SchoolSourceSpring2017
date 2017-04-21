@@ -129,7 +129,20 @@ public class ChordUser
                              try {
                                  String path;
                                  String fileName = tokens[1];
-                                 for(int i = 1; i <= 3; ++i) {
+
+                                 // Total peers is 3, because we hav 3 copies of each file
+                                 int totalPeers = 3;
+                                 // Number of peers who can commit
+                                 int numPeersCanCommit = 0;
+
+                                 // The shared Id of the transaction
+                                 int transactionId = (int)(Math.random() * 10000 + 1);
+                                 // Our list of transactions we are sharing
+                                 HashMap<Long, Transaction> transactionMap = new HashMap<Long, Transaction>();
+
+
+                                 // Ask the peers if we can commit
+                                 for(int i = 1; i <= totalPeers; ++i) {
                                    // TODO: mod by 65535 to get it to go to other ports
                                    long guidObject = md5(fileName + i);
                                    // If you are using windows you have to use
@@ -137,10 +150,38 @@ public class ChordUser
                                    path = "./"+  guid +"/"+fileName; // path to file
                                    FileStream file = new FileStream(path);
                                    ChordMessageInterface peer = chord.locateSuccessor(guidObject);
-                                   // TODO: Ask the peer if we can commit, and pass it a new transaction object
-                                   if(peer.canCommit(new Transaction(guidObject, file, (int)(Math.random() * 10000 + 1)), (Long) readTimes.get(guidObject))) {
-                                     peer.put(guidObject, file); // put file into ring
-                                     System.out.println("Wrote file to successor ID: " + peer.getId());
+                                   // Ask all of the peers if we can commit, and pass it a new transaction object
+                                   Transaction peerTransaction = new Transaction(guidObject, file, transactionId);
+                                   transactionMap.put(guidObject, peerTransaction);
+                                   Transaction peerCanCommitTransaction = peer.canCommit(peerTransaction, (Long) readTimes.get(guidObject));
+                                   transactionMap.put(guidObject, peerCanCommitTransaction);
+
+                                   if(peerCanCommitTransaction.vote == Transaction.VOTE.YES)
+                                    numPeersCanCommit++;
+                                 }
+
+                                 // Check if we are committing
+                                 if(numPeersCanCommit >= totalPeers) {
+                                   // Commit the transactions
+                                   for(int i = 1; i <= totalPeers; ++i) {
+                                    // TODO: mod by 65535 to get it to go to other ports
+                                    long guidObject = md5(fileName + i);
+                                    ChordMessageInterface peer = chord.locateSuccessor(guidObject);
+                                    peer.doCommit(transactionMap.get(guidObject));
+                                    // Update our read time
+                                    readTimes.put(guidObject, System.currentTimeMillis());
+                                   }
+
+                                   // File Commited
+                                   System.out.println(fileName + " has been committed!");
+                                 } else {
+                                   // Abort the transactions
+                                   System.out.println("All Peers did not agree to the commit, Please update your file accordingly, aborting...");
+                                   for(int i = 1; i <= totalPeers; ++i) {
+                                    // TODO: mod by 65535 to get it to go to other ports
+                                    long guidObject = md5(fileName + i);
+                                    ChordMessageInterface peer = chord.locateSuccessor(guidObject);
+                                    peer.doAbort(transactionMap.get(guidObject));
                                    }
                                  }
                              } catch (IOException e) {

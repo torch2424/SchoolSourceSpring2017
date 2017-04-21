@@ -9,9 +9,9 @@ import java.io.*;
  * @author Aaron turner
  */
 public interface AtomicCommitInterface extends Remote {
-  public boolean canCommit(Transaction transaction, Long readTime) throws RemoteException;
+  public Transaction canCommit(Transaction transaction, Long readTime) throws RemoteException;
   public void doCommit(Transaction transaction) throws IOException, RemoteException;
   public void doAbort(Transaction transaction) throws RemoteException;
-  public boolean haveCommited(Transaction transaction, long guid) throws RemoteException;
-  public boolean getDecisions(Transaction transaction) throws RemoteException;
+  public boolean haveCommited(Transaction transaction, Long readTime) throws RemoteException;
+  public boolean getDecision(Transaction transaction) throws RemoteException;
 }
