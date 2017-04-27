@@ -9,7 +9,7 @@ Within directory:
 
 # Javadocs
 
-Generate Javadocs from within the javaDoc directory: `javadoc -private ../ChordUser.java`
+Generate Javadocs from within the javaDoc directory: `javadoc -private ../*.java`
 
 # Nice Java Docs Cheat sheet
 https://binfalse.de/2015/10/05/javadoc-cheats-sheet/
