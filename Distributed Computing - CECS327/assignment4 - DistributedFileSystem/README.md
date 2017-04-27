@@ -14,4 +14,4 @@ Generate Javadocs from within the javaDoc directory: `javadoc -private ../ChordU
 # Nice Java Docs Cheat sheet
 https://binfalse.de/2015/10/05/javadoc-cheats-sheet/
 
-# Example Video (Ran in Debug Mode for Verbosity)
+# Example Gif

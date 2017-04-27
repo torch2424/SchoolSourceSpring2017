@@ -188,7 +188,7 @@ public class ChordUser
                                     firstTransaction.getOperation());
                                  } else {
                                    // Abort the transactions
-                                   System.out.println("All Peers did not agree to the commit, Please update your file accordingly, aborting...");
+                                   System.out.println("All Peers did not agree to the commit!\nPlease update your file accordingly, aborting...");
                                    for(int i = 1; i <= totalPeers; ++i) {
                                     // TODO: mod by 65535 to get it to go to other ports
                                     long guidObject = md5(fileName + i);
