@@ -177,7 +177,7 @@ public class ChordUser
                                     ChordMessageInterface peer = chord.locateSuccessor(guidObject);
                                     peer.doCommit(transactionMap.get(guidObject));
                                     // Update our read time
-                                    readTimes.put(guidObject, System.currentTimeMillis());
+                                    readTimes.put(guidObject, peer.getTime());
                                    }
 
                                    // File Commited
@@ -246,7 +246,7 @@ public class ChordUser
 
                                  // Finally, add to our read times
                                  for(int i = 1; i < 4; i++) {
-                                   readTimes.put(md5(fileName + i), System.currentTimeMillis());
+                                   readTimes.put(md5(fileName + i), peer.getTime());
                                  }
                              } catch (IOException e) {
                                  e.printStackTrace();

@@ -14,4 +14,5 @@ public interface AtomicCommitInterface extends Remote {
   public void doAbort(Transaction transaction) throws RemoteException;
   public boolean haveCommited(Transaction transaction, Long readTime) throws RemoteException;
   public Transaction.VOTE getDecision(Transaction transaction) throws RemoteException;
+  public long getTime() throws RemoteException;
 }

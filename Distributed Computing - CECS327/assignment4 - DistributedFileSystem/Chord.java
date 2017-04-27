@@ -446,7 +446,13 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
     }
 
     /**
-     * Function to ask the chord if we can commit a file
+     * Function to check if we can commit a file
+     * @param transaction
+     *          the complete transaction we shall be performing
+     * @param readTime
+     *          the time the client last read the file
+     *
+     * @return transaction, with our vote containing if we accept the transaction
      */
     public Transaction canCommit(Transaction transaction, Long readTime) {
       // A client has asked us if we can commit
@@ -479,6 +485,11 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
       return transaction;
     }
 
+    /**
+     * Function to perform a transaction upon a file
+     * @param transaction
+     *          the complete transaction we shall be performing
+     */
     public void doCommit(Transaction transaction) throws IOException, RemoteException{
       // Do the commit
       if(transaction.getOperation() == Transaction.OPERATION.WRITE) {
@@ -492,6 +503,11 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
       }
     }
 
+    /**
+     * Function to abort and remove a transaction upon a file
+     * @param transaction
+     *          the complete transaction we shall be aborting
+     */
     public void doAbort(Transaction transaction) throws RemoteException {
       // Delete the saved transaction
       String transactionPath = "/var/tmp/" + transaction.transactionId;
@@ -499,6 +515,15 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
       transactionFile.delete();
     }
 
+    /**
+     * Function to return if we have commit a transaction
+     * @param transaction
+     *          the complete transaction we shall be checking
+     * @param readTime
+     *          the time the client last read the file
+     *
+     * @return boolean if we have commited or not.
+     */
     public boolean haveCommited(Transaction transaction, Long readTime) throws RemoteException {
       // Check our write time
       Long writeTime = (Long) writeTimes.get(transaction.getFileId());
@@ -511,8 +536,24 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
       return true;
     }
 
+    /**
+     * Function to return the vote of a transaction
+     * @param transaction
+     *          the complete transaction we shall be checking
+     *
+     * @return the vote of the transaction
+     */
     public Transaction.VOTE getDecision(Transaction transaction) throws RemoteException {
       return transaction.getVote();
+    }
+
+    /**
+     * Function to return the current system time
+     *
+     * @return the system's current time in milliseconds
+     */
+    public long getTime() {
+      return System.currentTimeMillis();
     }
 
 
