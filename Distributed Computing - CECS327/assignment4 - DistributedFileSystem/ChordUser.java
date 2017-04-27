@@ -155,11 +155,11 @@ public class ChordUser
                                    // Ask all of the peers if we can commit, and pass it a new transaction object
                                    Transaction peerTransaction;
                                    if(tokens[0].equals("write")) {
-                                     peerTransaction = new Transaction(guidObject, file, transactionId);
-                                     transactionMap.put(guidObject, peerTransaction, Transaction.OPERATION.WRITE);
+                                     peerTransaction = new Transaction(guidObject, file, transactionId, Transaction.OPERATION.WRITE);
+                                     transactionMap.put(guidObject, peerTransaction);
                                    } else {
-                                     peerTransaction = new Transaction(guidObject, file, transactionId);
-                                     transactionMap.put(guidObject, peerTransaction, Transaction.OPERATION.DELETE);
+                                     peerTransaction = new Transaction(guidObject, file, transactionId, Transaction.OPERATION.DELETE);
+                                     transactionMap.put(guidObject, peerTransaction);
                                    }
                                    Transaction peerCanCommitTransaction = peer.canCommit(peerTransaction, (Long) readTimes.get(guidObject));
                                    transactionMap.put(guidObject, peerCanCommitTransaction);
@@ -181,9 +181,11 @@ public class ChordUser
                                    }
 
                                    // File Commited
+                                   // Get our example transaction
+                                   Transaction firstTransaction = (Transaction) transactionMap.values().toArray()[0];
                                    System.out.println(fileName +
                                     " has been committed! With the operation: " +
-                                    transactionMap.values().toArray()[0].getOperation());
+                                    firstTransaction.getOperation());
                                  } else {
                                    // Abort the transactions
                                    System.out.println("All Peers did not agree to the commit, Please update your file accordingly, aborting...");

@@ -511,7 +511,7 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
       return true;
     }
 
-    public boolean getDecision(Transaction transaction) throws RemoteException {
+    public Transaction.VOTE getDecision(Transaction transaction) throws RemoteException {
       return transaction.getVote();
     }
 

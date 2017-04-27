@@ -18,12 +18,12 @@ public class Transaction implements Serializable {
   long guid;
 
   VOTE vote;
-  Operation operation;
+  OPERATION operation;
   FileStream fileStream;
 
   // Our constructor
   public Transaction(long passedGuid, FileStream passedFileStream, int passedId,
-   Operation passedOperation) {
+   OPERATION passedOperation) {
     guid = passedGuid;
     fileStream = passedFileStream;
     transactionId = passedId;
