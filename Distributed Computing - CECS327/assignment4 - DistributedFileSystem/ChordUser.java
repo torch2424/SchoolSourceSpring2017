@@ -122,7 +122,9 @@ public class ChordUser
                             //quit the UI, goodbyes will be caught by our shutdown
                             System.exit(1);
                             return;
-                         } else if  (tokens[0].equals("write") && tokens.length == 2) {
+                         } else if  ((tokens[0].equals("write") ||
+                          tokens[0].equals("delete")) &&
+                          tokens.length == 2) {
                              //Create a local
                              //    "./"+  guid +"/"+fileName
                              // where filename = tokens[1];
@@ -147,16 +149,22 @@ public class ChordUser
                                    long guidObject = md5(fileName + i);
                                    // If you are using windows you have to use
                                    // 				path = ".\\"+  guid +"\\"+fileName; // path to file
-                                   path = "./"+  guid +"/"+fileName; // path to file
+                                   path = "./" + guid + "/" + fileName; // path to file
                                    FileStream file = new FileStream(path);
                                    ChordMessageInterface peer = chord.locateSuccessor(guidObject);
                                    // Ask all of the peers if we can commit, and pass it a new transaction object
-                                   Transaction peerTransaction = new Transaction(guidObject, file, transactionId);
-                                   transactionMap.put(guidObject, peerTransaction);
+                                   Transaction peerTransaction;
+                                   if(tokens[0].equals("write")) {
+                                     peerTransaction = new Transaction(guidObject, file, transactionId);
+                                     transactionMap.put(guidObject, peerTransaction, Transaction.OPERATION.WRITE);
+                                   } else {
+                                     peerTransaction = new Transaction(guidObject, file, transactionId);
+                                     transactionMap.put(guidObject, peerTransaction, Transaction.OPERATION.DELETE);
+                                   }
                                    Transaction peerCanCommitTransaction = peer.canCommit(peerTransaction, (Long) readTimes.get(guidObject));
                                    transactionMap.put(guidObject, peerCanCommitTransaction);
 
-                                   if(peerCanCommitTransaction.vote == Transaction.VOTE.YES)
+                                   if(peer.getDecision(peerCanCommitTransaction) == Transaction.VOTE.YES)
                                     numPeersCanCommit++;
                                  }
 
@@ -173,7 +181,9 @@ public class ChordUser
                                    }
 
                                    // File Commited
-                                   System.out.println(fileName + " has been committed!");
+                                   System.out.println(fileName +
+                                    " has been committed! With the operation: " +
+                                    transactionMap.values().toArray()[0].getOperation());
                                  } else {
                                    // Abort the transactions
                                    System.out.println("All Peers did not agree to the commit, Please update your file accordingly, aborting...");
@@ -239,22 +249,6 @@ public class ChordUser
                              } catch (IOException e) {
                                  e.printStackTrace();
                              }
-                        } else if  (tokens[0].equals("delete") && tokens.length == 2) {
-                          try {
-                            // Obtain the chord that is responsable for the file:
-                            //  peer = chord.locateSuccessor(guidObject);
-                            // where guidObject = md5(fileName)
-                            // Call peer.delete(guidObject)
-                            String fileName = tokens[1];
-                            for(int i = 1; i <= 3; ++i) {
-                              long guidObject = md5(fileName + i);
-                              ChordMessageInterface peer = chord.locateSuccessor(guidObject);
-                              peer.delete(guidObject);
-                              System.out.println("Delete File: " + fileName);
-                            }
-                          } catch (IOException e) {
-                              e.printStackTrace();
-                          }
                         } else {
                           System.out.println("Command not recognized");
                         }

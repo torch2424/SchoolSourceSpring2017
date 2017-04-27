@@ -457,6 +457,10 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
         readTime != null &&
         readTime < writeTime) {
           transaction.voteNo();
+      } else if(writeTime != null &&
+        readTime == null) {
+        // Also, if we have a write time, and no read time, vote no
+        transaction.voteNo();
       } else {
         transaction.voteYes();
         try {
@@ -477,13 +481,22 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
 
     public void doCommit(Transaction transaction) throws IOException, RemoteException{
       // Do the commit
-      put(transaction.getFileId(), transaction.getStream());
-      // Update the write time
-      writeTimes.put(transaction.getFileId(), System.currentTimeMillis());
+      if(transaction.getOperation() == Transaction.OPERATION.WRITE) {
+        put(transaction.getFileId(), transaction.getStream());
+        // Update the write time
+        writeTimes.put(transaction.getFileId(), System.currentTimeMillis());
+      } else if(transaction.getOperation() == Transaction.OPERATION.DELETE) {
+        // Delete the object, and remove the write time
+        delete(transaction.getFileId());
+        writeTimes.remove(transaction.getFileId());
+      }
     }
 
     public void doAbort(Transaction transaction) throws RemoteException {
-
+      // Delete the saved transaction
+      String transactionPath = "/var/tmp/" + transaction.transactionId;
+      File transactionFile = new File(transactionPath);
+      transactionFile.delete();
     }
 
     public boolean haveCommited(Transaction transaction, Long readTime) throws RemoteException {
@@ -499,7 +512,7 @@ public class Chord extends java.rmi.server.UnicastRemoteObject implements ChordM
     }
 
     public boolean getDecision(Transaction transaction) throws RemoteException {
-      return true;
+      return transaction.getVote();
     }
 
 

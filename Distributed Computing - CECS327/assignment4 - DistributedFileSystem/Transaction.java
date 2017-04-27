@@ -6,7 +6,7 @@ import java.io.*;
   * @author Aaron Turner
   */
 public class Transaction implements Serializable {
-  public enum Operation {
+  public enum OPERATION {
     WRITE, DELETE
   }
 
@@ -22,10 +22,12 @@ public class Transaction implements Serializable {
   FileStream fileStream;
 
   // Our constructor
-  public Transaction(long passedGuid, FileStream passedFileStream, int passedId) {
+  public Transaction(long passedGuid, FileStream passedFileStream, int passedId,
+   Operation passedOperation) {
     guid = passedGuid;
     fileStream = passedFileStream;
     transactionId = passedId;
+    operation = passedOperation;
   }
 
   public void voteYes() {
@@ -34,6 +36,14 @@ public class Transaction implements Serializable {
 
   public void voteNo() {
     vote = VOTE.NO;
+  }
+
+  public VOTE getVote() {
+    return vote;
+  }
+
+  public OPERATION getOperation() {
+    return operation;
   }
 
   public long getFileId() {
