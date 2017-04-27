@@ -15,3 +15,5 @@ Generate Javadocs from within the javaDoc directory: `javadoc -private ../ChordU
 https://binfalse.de/2015/10/05/javadoc-cheats-sheet/
 
 # Example Gif
+
+![Working Gif](https://files.aaronthedev.com/$/rq9an)
